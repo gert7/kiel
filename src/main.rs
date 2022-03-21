@@ -13,101 +13,115 @@
 //     Ok(())
 // }
 
-use std::{str::FromStr, time::Duration};
+mod price_matrix;
+mod nord_pool_spot;
 
-use color_eyre::{owo_colors::OwoColorize, Result};
-use rust_decimal::Decimal;
-use thirtyfour::{prelude::ElementQueryable, By, DesiredCapabilities, WebDriver, WebElement};
+use crossterm::{event::DisableMouseCapture, execute, terminal::EnterAlternateScreen};
+use rust_decimal::{prelude::ToPrimitive};
+use tui::{
+    backend::CrosstermBackend,
+    style::{Color, Style},
+    widgets::{BarChart, Block, Borders},
+    Terminal,
+};
 
-fn convert_to_decimal(string: &str) -> Decimal {
-    let string = string.replace(",", ".");
-    Decimal::from_str(&string).unwrap() // TODO: Replace with something better
-}
+use crate::{price_matrix::{DateColumn, PriceCell}, nord_pool_spot::fetch_prices_from_nord_pool};
 
-fn convert_hour_to_u32(string: &str) -> Option<u32> {
-    let mut string2 = string.to_owned();
-    string2.truncate(2);
-
-    string2.parse::<u32>().ok()
-}
-
-#[derive(Clone, Debug)]
-struct PriceCell {
-    hour: u32,
-    price: Decimal,
-}
-
-async fn get_dates<'a>(datatable: &WebElement<'a>) -> color_eyre::Result<Vec<String>> {
-    let mut vec = vec![];
-    let headers = datatable
-        .query(By::ClassName("column-headers"))
-        .first()
-        .await?;
-    let headers = headers.find_elements(By::Tag("th")).await?;
-    for header in headers {
-        let text = header.text().await?;
-        let first_alphanumeric = text.as_bytes().iter().find(|&e| !e.is_ascii_whitespace());
-        if first_alphanumeric.is_some() {
-            vec.push(text);
-        }
+fn price_cell_vec_to_chart_data(dc: &DateColumn) -> Vec<(String, u64)> {
+    let mut result = vec![];
+    for cell in &dc.cells {
+        let label = format!("{:02}", cell.hour);
+        let value = cell.price.to_u64().unwrap();
+        result.push((label, value));
     }
-    println!("{:?}", vec);
-    Ok(vec)
+    result
+}
+
+fn chart_data_as_str_ref<'a>(invec: &'a Vec<(String, u64)>) -> Vec<(&'a str, u64)> {
+    let mut result = vec![];
+    for item in invec {
+        result.push((item.0.as_ref(), item.1));
+    }
+    result
+}
+
+fn date_chart_max(cells: &[(&str, u64)]) -> u64 {
+    let prices = cells.iter().map(|c| c.1);
+    prices.max().unwrap()
+}
+
+fn price_cell_max(cells: &Vec<PriceCell>) -> u64 {
+    let prices = cells.iter().map(|c| c.price.to_u64().unwrap());
+    prices.max().unwrap()
+}
+
+fn draw(bar_chart_data: &[(&str, u64)], bar_chart_max: u64, title: &str) -> color_eyre::Result<()> {
+    let mut stdout = std::io::stdout();
+    execute!(stdout, EnterAlternateScreen, DisableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    terminal.draw(|f| {
+        let mut size = f.size();
+        size.height = 20;
+
+        let chart = BarChart::default()
+            .block(Block::default().title(title).borders(Borders::ALL))
+            .bar_width(4)
+            .bar_gap(1)
+            .bar_style(Style::default().fg(Color::Yellow))
+            .value_style(Style::default().fg(Color::Black).bg(Color::Yellow))
+            .label_style(Style::default().fg(Color::White))
+            .data(bar_chart_data)
+            .max(bar_chart_max);
+        f.render_widget(chart, size);
+    })?;
+
+    Ok(())
 }
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    let mut caps = DesiredCapabilities::chrome();
-    caps.add_chrome_arg("--enable-automation")?;
-    let driver = WebDriver::new("http://localhost:4444/wd/hub", &caps).await?;
+    let date_matrix = fetch_prices_from_nord_pool().await?;
 
-    driver
-        .get(
-            "https://www.nordpoolgroup.com/Market-data1/Dayahead/Area-Prices/EE/Hourly/?view=table",
-        )
-        .await?;
+    let sample_data = &[
+        ("00", 114u64),
+        ("01", 118),
+        ("02", 118),
+        ("03", 119),
+        ("04", 135),
+        ("05", 149),
+        ("06", 205),
+        ("07", 253),
+        ("08", 205),
+        ("09", 142),
+        ("10", 153),
+        ("11", 159),
+        ("12", 140),
+        ("13", 140),
+        ("14", 140),
+        ("15", 160),
+        ("16", 140),
+        ("17", 188),
+        ("18", 225),
+        ("19", 235),
+        ("20", 189),
+        ("21", 180),
+        ("22", 122),
+        ("23", 167),
+    ];
 
-    // tokio::time::sleep(Duration::from_secs(5)).await;
+    let bar_chart_data = price_cell_vec_to_chart_data(&date_matrix[0]);
+    let bar_chart_data = chart_data_as_str_ref(&bar_chart_data);
+    let bar_chart_max = price_cell_max(&date_matrix[0].cells);
 
-    driver.query(By::Id("datatable")).exists().await?;
-    let datatable = driver.query(By::Id("datatable")).first().await?;
-    let dates = get_dates(&datatable).await?;
+    println!("{}", date_chart_max(sample_data));
+    println!("{:?}", sample_data);
 
-    let datatable = datatable.query(By::Tag("tbody")).first().await?;
-    let rows = datatable.find_elements(By::ClassName("data-row")).await?;
-
-    let mut date_vectors: Vec<Vec<PriceCell>> = vec![vec![]; dates.len()];
-
-    for row in rows.iter() {
-        let cells = row.find_elements(By::Tag("td")).await?;
-        let mut cells = cells.iter();
-        let hour = match cells.next() {
-            Some(e) => {
-                let e = e.text().await?;
-                convert_hour_to_u32(&e)
-            }
-            None => continue,
-        };
-
-        let hour = match hour {
-            Some(h) => h,
-            None => continue,
-        };
-
-        for (date_i, cell) in cells.enumerate() {
-            let intext = cell.text().await?;
-            let price_cell = PriceCell {
-                hour: hour,
-                price: convert_to_decimal(&intext),
-            };
-            println!("{}: {:?}", date_i, price_cell);
-            date_vectors[date_i].push(price_cell);
-        }
-    }
-
-    driver.close().await?;
+    draw(bar_chart_data.as_slice(), bar_chart_max, &date_matrix[0].date)?;
+    // draw(sample_data, date_chart_max(sample_data))?;
 
     Ok(())
 }
