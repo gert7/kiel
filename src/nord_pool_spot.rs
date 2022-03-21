@@ -89,12 +89,12 @@ pub async fn fetch_prices_from_nord_pool() -> color_eyre::Result<PriceMatrix> {
                 hour: hour,
                 price: convert_to_decimal(&intext),
             };
-            println!("{}: {:?}", date_i, price_cell);
+            // println!("{}: {:?}", date_i, price_cell);
             date_vectors[date_i].cells.push(price_cell);
         }
     }
 
-    println!("{:?}", date_vectors[0]);
+    // println!("{:?}", date_vectors[0]);
 
     driver.close().await?;
 

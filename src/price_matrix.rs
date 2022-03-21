@@ -8,7 +8,7 @@ pub struct PriceCell {
 
 #[derive(Clone, Debug)]
 pub struct DateColumn {
-    pub date: String, 
+    pub date: String,
     pub cells: Vec<PriceCell>,
 }
 
