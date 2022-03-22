@@ -19,18 +19,34 @@ fn convert_hour_to_u32(string: &str) -> Option<u32> {
     string2.parse::<u32>().ok()
 }
 
-fn parse_date(date: &str, timezone: &Tz) -> Result<Date<Tz>, ParseIntError> {
+fn parse_date_dmy(date: &str, timezone: &Tz) -> Result<Date<Tz>, ParseIntError> {
+    // DD-MM-YYYY
+    let day: u32 = date[0..=1].parse()?;
+    let month: u32 = date[3..=4].parse()?;
+    let year: i32 = date[6..=9].parse()?;
+    Ok(timezone.ymd(year, month, day))
+}
+
+fn parse_date_ymd(date: &str, timezone: &Tz) -> Result<Date<Tz>, ParseIntError> {
+    // YYYY-MM-DD
     let year: i32 = date[0..=3].parse()?;
     let month: u32 = date[5..=6].parse()?;
     let day: u32 = date[8..=9].parse()?;
     Ok(timezone.ymd(year, month, day))
 }
 
-pub fn retrieve_datetime(date: &str, hour: u32, timezone: &Tz) -> color_eyre::Result<DateTime<Tz>> {
-    // 2022-03-02
-    let date = parse_date(date, timezone)?;
-    let datetime = date.and_hms(hour.into(), 0, 0);
-    Ok(datetime)
+fn parse_date(date: &str, timezone: &Tz) -> Option<Date<Tz>> {
+    println!("Parsing {}", date);
+    let dmy = parse_date_dmy(date, timezone);
+    if dmy.is_ok() { return Some(dmy.unwrap()); }
+    let ymd = parse_date_ymd(date, timezone);
+    if ymd.is_ok() { return Some(ymd.unwrap()); }
+    None
+}
+
+pub fn retrieve_datetime(date: &str, hour: u32, timezone: &Tz) -> Option<DateTime<Tz>> {
+    let date = parse_date(date, timezone);
+    date.and_then(|d| Some(d.and_hms(hour.into(), 0, 0)))
 }
 
 async fn get_dates<'a>(datatable: &WebElement<'a>) -> color_eyre::Result<Vec<String>> {
@@ -75,12 +91,12 @@ pub async fn fetch_prices_from_nord_pool() -> color_eyre::Result<PriceMatrix> {
 
     for i in 0..(dates.len()) {
         match parse_date(&dates[i], &Berlin) {
-            Ok(date) => date_vectors.push(Some(DateColumn {
+            Some(date) => date_vectors.push(Some(DateColumn {
                 date_title: dates[i].clone(),
                 date: date,
                 cells: vec![],
             })),
-            Err(_) => date_vectors.push(None),
+            None => date_vectors.push(None),
         }
     }
 
@@ -105,9 +121,10 @@ pub async fn fetch_prices_from_nord_pool() -> color_eyre::Result<PriceMatrix> {
                 // check if column here isn't invalid
                 Some(column) => {
                     let intext = cell.text().await?;
-                    let moment = retrieve_datetime(&dates[date_i], hour, &Berlin);
+                    let dateline = &dates[date_i];
+                    let moment = retrieve_datetime(dateline, hour, &Berlin);
                     match moment {
-                        Ok(moment) => {
+                        Some(moment) => {
                             let price_cell = PriceCell {
                                 hour: hour,
                                 price: convert_to_decimal(&intext),
@@ -115,7 +132,7 @@ pub async fn fetch_prices_from_nord_pool() -> color_eyre::Result<PriceMatrix> {
                             };
                             column.cells.push(price_cell);
                         }
-                        Err(e) => println!("{}", e),
+                        None => println!("Unable to parse dateline: {}", dateline),
                     }
                 }
                 None => continue,

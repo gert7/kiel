@@ -22,11 +22,21 @@ async fn main() -> color_eyre::Result<()> {
     println!("{:?}", moment);
 
     let utc = Utc::now();
-    let local = Local::now();
-    let diff = local.with_timezone(&Local) - local;
-    println!("{:?} | {:?} | {:?}", utc, local, diff);
+    let local = Local::now().with_timezone(&Tallinn);
 
     let next_day = &date_matrix[0];
+
+    println!("{:?}", date_matrix);
+
+    match next_day {
+        Some(v) => {
+            for cell in &v.cells {
+                let difference = cell.moment - local;
+                println!("Time until: {:?}", difference.num_minutes());
+            }
+        },
+        None => todo!(),
+    }
 
     Ok(())
 }
