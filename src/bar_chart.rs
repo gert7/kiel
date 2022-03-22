@@ -18,7 +18,7 @@ use crate::price_matrix::{DateColumn, PriceCell};
 fn price_cell_vec_to_chart_data(dc: &DateColumn) -> Vec<(String, u64)> {
     let mut result = vec![];
     for cell in &dc.cells {
-        let label = format!("{:02}", cell.hour);
+        let label = format!("{:02}", cell.hour); // TODO: get moment
         let value = cell.price.to_u64().unwrap();
         result.push((label, value));
     }

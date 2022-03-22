@@ -10,6 +10,7 @@ color-eyre = "0.6"
 reqwest = {version = "0.11.9", features = ["blocking"]}
 thirtyfour = "0.28"
 tokio = "1.17"
+chrono = "0.4"
 chrono-tz = "0.6"
 rust_decimal = "1.22"
 crossterm = "0.23"

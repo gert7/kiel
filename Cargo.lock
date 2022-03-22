@@ -568,6 +568,7 @@ dependencies = [
 name = "kiel"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "chrono-tz",
  "color-eyre",
  "crossterm 0.23.1",
