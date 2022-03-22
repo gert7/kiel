@@ -25,6 +25,7 @@ pub struct PriceCell {
 
 #[derive(Clone, Debug)]
 pub struct DateColumn {
+    pub date_title: String,
     pub date: Date<Tz>,
     pub cells: Vec<PriceCell>,
 }

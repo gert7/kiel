@@ -40,7 +40,7 @@ fn date_chart_max(cells: &Vec<PriceCell>) -> u64 {
 
 pub fn draw(date: &DateColumn) -> color_eyre::Result<()> {
     let bar_chart_max = date_chart_max(&date.cells);
-    let title = date.date.as_ref();
+    let title = date.date_title.as_ref();
 
     let bar_chart_data = price_cell_vec_to_chart_data(date);
     let bar_chart_data = chart_data_as_str_ref(&bar_chart_data);

@@ -76,6 +76,7 @@ pub async fn fetch_prices_from_nord_pool() -> color_eyre::Result<PriceMatrix> {
     for i in 0..(dates.len()) {
         match parse_date(&dates[i], &Berlin) {
             Ok(date) => date_vectors.push(Some(DateColumn {
+                date_title: dates[i].clone(),
                 date: date,
                 cells: vec![],
             })),
@@ -100,7 +101,8 @@ pub async fn fetch_prices_from_nord_pool() -> color_eyre::Result<PriceMatrix> {
         };
 
         for (date_i, cell) in cells.enumerate() {
-            match &mut date_vectors[date_i] { // check if column here isn't invalid
+            match &mut date_vectors[date_i] {
+                // check if column here isn't invalid
                 Some(column) => {
                     let intext = cell.text().await?;
                     let moment = retrieve_datetime(&dates[date_i], hour, &Berlin);
