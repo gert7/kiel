@@ -1,4 +1,4 @@
-use chrono::DateTime;
+use chrono::{DateTime, Date};
 use chrono_tz::Tz;
 use rust_decimal::Decimal;
 
@@ -25,8 +25,8 @@ pub struct PriceCell {
 
 #[derive(Clone, Debug)]
 pub struct DateColumn {
-    pub date: String,
+    pub date: Date<Tz>,
     pub cells: Vec<PriceCell>,
 }
 
-pub type PriceMatrix = Vec<DateColumn>;
+pub type PriceMatrix = Vec<Option<DateColumn>>;

@@ -74,10 +74,13 @@ pub async fn fetch_prices_from_nord_pool() -> color_eyre::Result<PriceMatrix> {
     let mut date_vectors: PriceMatrix = vec![];
 
     for i in 0..(dates.len()) {
-        date_vectors.push(DateColumn {
-            date: dates[i].clone(),
-            cells: vec![],
-        })
+        match parse_date(&dates[i], &Berlin) {
+            Ok(date) => date_vectors.push(Some(DateColumn {
+                date: date,
+                cells: vec![],
+            })),
+            Err(_) => date_vectors.push(None),
+        }
     }
 
     for row in rows.iter() {
@@ -97,18 +100,23 @@ pub async fn fetch_prices_from_nord_pool() -> color_eyre::Result<PriceMatrix> {
         };
 
         for (date_i, cell) in cells.enumerate() {
-            let intext = cell.text().await?;
-            let moment = retrieve_datetime(&dates[date_i], hour, &Berlin);
-            match moment {
-                Ok(moment) => {
-                    let price_cell = PriceCell {
-                        hour: hour,
-                        price: convert_to_decimal(&intext),
-                        moment: moment,
-                    };
-                    date_vectors[date_i].cells.push(price_cell);
+            match &mut date_vectors[date_i] { // check if column here isn't invalid
+                Some(column) => {
+                    let intext = cell.text().await?;
+                    let moment = retrieve_datetime(&dates[date_i], hour, &Berlin);
+                    match moment {
+                        Ok(moment) => {
+                            let price_cell = PriceCell {
+                                hour: hour,
+                                price: convert_to_decimal(&intext),
+                                moment: moment,
+                            };
+                            column.cells.push(price_cell);
+                        }
+                        Err(e) => println!("{}", e),
+                    }
                 }
-                Err(e) => println!("{}", e),
+                None => continue,
             }
             // println!("{}: {:?}", date_i, price_cell);
         }
