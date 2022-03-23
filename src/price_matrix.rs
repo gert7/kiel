@@ -1,3 +1,5 @@
+use std::ops::Mul;
+
 use chrono::{DateTime, Date};
 use chrono_tz::Tz;
 use rust_decimal::Decimal;
@@ -7,11 +9,16 @@ pub struct Price {
     cents_per_kwh: Decimal,
 }
 
+/// Converts currency per MWh to cents per kWh
+pub fn epmh_to_cpkh(currency_per_mwh: Decimal) -> Decimal {
+    currency_per_mwh / Decimal::from(10i32)
+}
+
 impl Price {
     fn new(currency_per_mwh: Decimal) -> Price {
         Price {
             currency_per_mwh,
-            cents_per_kwh: todo!(),
+            cents_per_kwh: epmh_to_cpkh(currency_per_mwh),
         }
     }
 }
