@@ -1,4 +1,5 @@
 
+use chrono::Timelike;
 use crossterm::{event::DisableMouseCapture, execute, terminal::EnterAlternateScreen};
 use rust_decimal::prelude::ToPrimitive;
 use tui::{
@@ -18,8 +19,8 @@ use crate::price_matrix::{DateColumn, PriceCell};
 fn price_cell_vec_to_chart_data(dc: &DateColumn) -> Vec<(String, u64)> {
     let mut result = vec![];
     for cell in &dc.cells {
-        let label = format!("{:02}", cell.hour); // TODO: get moment
-        let value = cell.price.to_u64().unwrap();
+        let label = format!("{:02}", cell.moment.hour());
+        let value = cell.price.0.to_u64().unwrap();
         result.push((label, value));
     }
     result
@@ -34,7 +35,7 @@ fn chart_data_as_str_ref<'a>(invec: &'a Vec<(String, u64)>) -> Vec<(&'a str, u64
 }
 
 fn date_chart_max(cells: &Vec<PriceCell>) -> u64 {
-    let prices = cells.iter().map(|c| c.price.to_u64().unwrap());
+    let prices = cells.iter().map(|c| c.price.0.to_u64().unwrap());
     prices.max().unwrap()
 }
 

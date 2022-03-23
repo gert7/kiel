@@ -5,9 +5,9 @@ use chrono_tz::{Europe::Berlin, Tz};
 use rust_decimal::Decimal;
 use thirtyfour::{prelude::ElementQueryable, By, DesiredCapabilities, WebDriver, WebElement};
 
-use crate::price_matrix::{DateColumn, PriceCell, PriceMatrix};
+use crate::price_matrix::{DateColumn, PriceCell, PriceMatrix, PricePerMwh};
 
-fn convert_to_decimal(string: &str) -> Decimal {
+fn convert_price_to_decimal(string: &str) -> Decimal {
     let string = string.replace(",", ".");
     Decimal::from_str(&string).unwrap() // TODO: Replace with something better
 }
@@ -126,9 +126,9 @@ pub async fn fetch_prices_from_nord_pool() -> color_eyre::Result<PriceMatrix> {
                     match moment {
                         Some(moment) => {
                             let price_cell = PriceCell {
-                                hour: hour,
-                                price: convert_to_decimal(&intext),
+                                price: PricePerMwh(convert_price_to_decimal(&intext)),
                                 moment: moment,
+                                tariff: None
                             };
                             column.cells.push(price_cell);
                         }
