@@ -28,12 +28,16 @@ pub fn get_tariff(time: &DateTime<Tz>) -> Tariff {
 mod tests {
     use super::*;
     use chrono::{TimeZone, Date};
-    use chrono_tz::{Europe::Tallinn, Tz};
+    use chrono_tz::{Europe::{Tallinn, Berlin}, Tz};
 
     /// Wednesday
     fn mmxxii_23_march() -> Date<Tz> { Tallinn.ymd(2022, 3, 23) }
     /// Saturday
     fn mmxxii_26_march() -> Date<Tz> { Tallinn.ymd(2022, 3, 26) }
+
+    fn german_morning() -> DateTime<Tz> { Berlin.ymd(2022, 3, 23).and_hms(6, 13, 0) }
+
+    fn german_evening() -> DateTime<Tz> { Berlin.ymd(2022, 3, 23).and_hms(21, 13, 0) }
 
     #[test]
     fn midnight_is_night() {
@@ -74,6 +78,18 @@ mod tests {
     #[test]
     fn sat_midnight() {
         let time = mmxxii_26_march().and_hms(0, 0, 0);
+        assert!(Tariff::get_tariff(&time) == Tariff::Night);
+    }
+
+    #[test]
+    fn german_morning_is_correct() {
+        let time = german_morning();
+        assert!(Tariff::get_tariff(&time) == Tariff::Day);
+    }
+
+    #[test]
+    fn german_evening_is_correct() {
+        let time = german_evening();
         assert!(Tariff::get_tariff(&time) == Tariff::Night);
     }
 }
