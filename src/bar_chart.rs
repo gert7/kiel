@@ -1,5 +1,5 @@
 
-use chrono::Timelike;
+use chrono::{Timelike, Datelike};
 use crossterm::{event::DisableMouseCapture, execute, terminal::EnterAlternateScreen};
 use rust_decimal::prelude::ToPrimitive;
 use tui::{
@@ -26,6 +26,7 @@ fn price_cell_vec_to_chart_data(dc: &DateColumn) -> Vec<(String, u64)> {
     result
 }
 
+/// Passion function for converting data for tui
 fn chart_data_as_str_ref<'a>(invec: &'a Vec<(String, u64)>) -> Vec<(&'a str, u64)> {
     let mut result = vec![];
     for item in invec {
@@ -41,7 +42,7 @@ fn date_chart_max(cells: &Vec<PriceCell>) -> u64 {
 
 pub fn draw(date: &DateColumn) -> color_eyre::Result<()> {
     let bar_chart_max = date_chart_max(&date.cells);
-    let title = date.date_title.as_ref();
+    let title = format!("{}-{}-{}", date.date.year(), date.date.month(), date.date.day());
 
     let bar_chart_data = price_cell_vec_to_chart_data(date);
     let bar_chart_data = chart_data_as_str_ref(&bar_chart_data);

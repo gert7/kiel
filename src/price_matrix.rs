@@ -38,7 +38,7 @@ impl From<&PriceCentsPerKwh> for PricePerMwh {
 pub struct PriceCell {
     pub price: PricePerMwh,
     pub moment: DateTime<Tz>,
-    pub tariff: Option<PricePerMwh>,
+    pub tariff_price: Option<PricePerMwh>,
     pub market_hour: u32,
 }
 
@@ -49,18 +49,25 @@ impl PriceCell {
             Tariff::Night => night_tariff,
             Tariff::Day => day_tariff,
         };
-        self.tariff = Some(tariff_value.into());
+        self.tariff_price = Some(tariff_value.into());
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct DateColumn {
-    pub date_title: String,
     pub date: Date<Tz>,
     pub cells: Vec<PriceCell>,
 }
 
 pub type PriceMatrix = Vec<Option<DateColumn>>;
+
+pub type DaySlice = Vec<PriceCell>;
+
+// #[derive(Clone, Debug)]
+// pub struct DayNightSlice {
+//     pub split_hour: u32,
+//     pub prices: Vec<PriceCell>,
+// }
 
 #[cfg(test)]
 mod tests {

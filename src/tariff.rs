@@ -24,6 +24,21 @@ impl Tariff {
             }
         }
     }
+
+    pub fn get_tariff_excl_sunday(time: &DateTime<Tz>) -> Tariff {
+        let time = time.with_timezone(&LocalTZ);
+        let day = time.weekday();
+        if day == Weekday::Sat {
+            Tariff::Night
+        } else {
+            let hour = time.hour();
+            if hour < 7 || hour >= 22 {
+                Tariff::Night
+            } else {
+                Tariff::Day
+            }
+        }
+    }
 }
 
 #[cfg(test)]

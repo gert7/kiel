@@ -2,7 +2,7 @@ use std::{num::ParseIntError, str::FromStr};
 
 use chrono::{Date, DateTime, TimeZone};
 use chrono_tz::Tz;
-use color_eyre::eyre::eyre;
+use color_eyre::eyre::{self, eyre};
 use rust_decimal::Decimal;
 use thirtyfour::{
     prelude::{ElementQueryable, WebDriverResult},
@@ -42,22 +42,22 @@ fn parse_date_ymd(date: &str, timezone: &Tz) -> Result<Date<Tz>, ParseIntError> 
     Ok(timezone.ymd(year, month, day))
 }
 
-fn parse_date(date: &str, timezone: &Tz) -> Option<Date<Tz>> {
+fn parse_date(date: &str, timezone: &Tz) -> eyre::Result<Date<Tz>> {
     println!("Parsing {}", date);
     let dmy = parse_date_dmy(date, timezone);
     if dmy.is_ok() {
-        return Some(dmy.unwrap());
+        return Ok(dmy.unwrap());
     }
     let ymd = parse_date_ymd(date, timezone);
     if ymd.is_ok() {
-        return Some(ymd.unwrap());
+        return Ok(ymd.unwrap());
     }
-    None
+    Err(eyre!("Unable to parse dateline: {}", date))
 }
 
-pub fn retrieve_datetime(date: &str, hour: u32, timezone: &Tz) -> Option<DateTime<Tz>> {
+pub fn retrieve_datetime(date: &str, hour: u32, timezone: &Tz) -> eyre::Result<DateTime<Tz>> {
     let date = parse_date(date, timezone);
-    date.and_then(|d| Some(d.and_hms(hour.into(), 0, 0)))
+    date.and_then(|d| Ok(d.and_hms(hour.into(), 0, 0)))
 }
 
 async fn get_dates<'a>(datatable: &WebElement<'a>) -> color_eyre::Result<Vec<String>> {
@@ -104,16 +104,16 @@ async fn row_iteration<'a>(
                 let dateline = &dates[date_i];
                 let moment = retrieve_datetime(dateline, hour, &MarketTZ);
                 match moment {
-                    Some(moment) => {
+                    Ok(moment) => {
                         let price_cell = PriceCell {
                             price: PricePerMwh(convert_price_to_decimal(&intext)),
                             moment: moment,
-                            tariff: None,
+                            tariff_price: None,
                             market_hour: hour,
                         };
                         column.cells.push(price_cell);
                     }
-                    None => eprintln!("Unable to parse dateline: {}", dateline),
+                    Err(e) => eprintln!("{}", e),
                 }
             }
             None => continue,
@@ -135,12 +135,11 @@ async fn retrieve_prices(driver: &WebDriver) -> color_eyre::Result<PriceMatrix> 
 
     for i in 0..(dates.len()) {
         match parse_date(&dates[i], &MarketTZ) {
-            Some(date) => date_vectors.push(Some(DateColumn {
-                date_title: dates[i].clone(),
+            Ok(date) => date_vectors.push(Some(DateColumn {
                 date: date,
                 cells: vec![],
             })),
-            None => date_vectors.push(None),
+            Err(_) => date_vectors.push(None),
         }
     }
 

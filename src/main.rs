@@ -6,7 +6,7 @@ mod tariff;
 mod constants;
 
 use chrono::{Duration, Local, TimeZone, Timelike, Utc, Date};
-use chrono_tz::{Europe::{Berlin, Tallinn}, Tz};
+use chrono_tz::{Europe::{Berlin, Tallinn}, Tz, America::Argentina::Buenos_Aires};
 use rust_decimal::Decimal;
 
 use crate::{
@@ -53,15 +53,15 @@ async fn main() -> color_eyre::Result<()> {
     // println!("{} {}", kph, mwh);
 
     /// Wednesday
-    fn mmxxii_23_march() -> Date<Tz> { Tallinn.ymd(2022, 3, 23) }
+    fn mmxxii_23_march() -> Date<Tz> { Berlin.ymd(2022, 3, 23) }
     /// Saturday
-    fn mmxxii_26_march() -> Date<Tz> { Tallinn.ymd(2022, 3, 26) }
+    fn mmxxii_26_march() -> Date<Tz> { Berlin.ymd(2022, 3, 26) }
 
-    let date = mmxxii_23_march();
-    let planned_day = strategy::DefaultStrategy::plan_day(&date, None);
-    for change in planned_day {
-        println!("{:?} {:?}", change.moment, change.state);
-    }
+    // let date = mmxxii_23_march();
+    // let planned_day = strategy::DefaultStrategy::plan_day(None);
+    // for change in planned_day {
+    //     println!("{:?} {:?}", change.moment, change.state);
+    // }
 
     Ok(())
 }
