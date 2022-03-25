@@ -13,5 +13,7 @@ tokio = "1.17"
 chrono = "0.4"
 chrono-tz = "0.6"
 rust_decimal = "1.22"
+# rust_decimal_macros = "1.22" # messes up the analyzer for chrono-tz
+lazy_static = "1.4"
 crossterm = "0.23"
 tui = "0.17"

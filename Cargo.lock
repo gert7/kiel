@@ -572,6 +572,7 @@ dependencies = [
  "chrono-tz",
  "color-eyre",
  "crossterm 0.23.1",
+ "lazy_static",
  "reqwest",
  "rust_decimal",
  "thirtyfour",

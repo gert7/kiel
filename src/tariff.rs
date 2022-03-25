@@ -1,5 +1,7 @@
-use chrono::{DateTime, Local, Datelike, Weekday, Timelike};
-use chrono_tz::{Tz, Europe::Tallinn};
+use chrono::{DateTime, Datelike, Timelike, Weekday};
+use chrono_tz::Tz;
+
+use crate::constants::LocalTZ;
 
 #[derive(Debug, PartialEq)]
 pub enum Tariff {
@@ -8,36 +10,47 @@ pub enum Tariff {
 }
 
 impl Tariff {
-pub fn get_tariff(time: &DateTime<Tz>) -> Tariff {
-    let time = time.with_timezone(&Tallinn);
-    let day = time.weekday();
-    if [Weekday::Sat, Weekday::Sun].contains(&day) {
-        Tariff::Night
-    } else {
-        let hour = time.hour();
-        if hour < 7 || hour >= 22 {
+    pub fn get_tariff(time: &DateTime<Tz>) -> Tariff {
+        let time = time.with_timezone(&LocalTZ);
+        let day = time.weekday();
+        if [Weekday::Sat, Weekday::Sun].contains(&day) {
             Tariff::Night
         } else {
-            Tariff::Day
+            let hour = time.hour();
+            if hour < 7 || hour >= 22 {
+                Tariff::Night
+            } else {
+                Tariff::Day
+            }
         }
     }
-}
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::{TimeZone, Date};
-    use chrono_tz::{Europe::{Tallinn, Berlin}, Tz};
+    use chrono::{Date, TimeZone};
+    use chrono_tz::{
+        Europe::{Berlin, Tallinn},
+        Tz,
+    };
 
     /// Wednesday
-    fn mmxxii_23_march() -> Date<Tz> { Tallinn.ymd(2022, 3, 23) }
+    fn mmxxii_23_march() -> Date<Tz> {
+        Tallinn.ymd(2022, 3, 23)
+    }
     /// Saturday
-    fn mmxxii_26_march() -> Date<Tz> { Tallinn.ymd(2022, 3, 26) }
+    fn mmxxii_26_march() -> Date<Tz> {
+        Tallinn.ymd(2022, 3, 26)
+    }
 
-    fn german_morning() -> DateTime<Tz> { Berlin.ymd(2022, 3, 23).and_hms(6, 13, 0) }
+    fn german_morning() -> DateTime<Tz> {
+        Berlin.ymd(2022, 3, 23).and_hms(6, 13, 0)
+    }
 
-    fn german_evening() -> DateTime<Tz> { Berlin.ymd(2022, 3, 23).and_hms(21, 13, 0) }
+    fn german_evening() -> DateTime<Tz> {
+        Berlin.ymd(2022, 3, 23).and_hms(21, 13, 0)
+    }
 
     #[test]
     fn midnight_is_night() {

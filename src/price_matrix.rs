@@ -1,10 +1,8 @@
-use std::ops::Mul;
-
 use chrono::{DateTime, Date};
 use chrono_tz::Tz;
 use rust_decimal::Decimal;
 
-use crate::tariff::{self, Tariff};
+use crate::tariff::Tariff;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct PricePerMwh(pub Decimal);
@@ -40,7 +38,8 @@ impl From<&PriceCentsPerKwh> for PricePerMwh {
 pub struct PriceCell {
     pub price: PricePerMwh,
     pub moment: DateTime<Tz>,
-    pub tariff: Option<PricePerMwh>
+    pub tariff: Option<PricePerMwh>,
+    pub market_hour: u32,
 }
 
 impl PriceCell {

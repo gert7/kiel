@@ -3,6 +3,7 @@ mod nord_pool_spot;
 mod price_matrix;
 mod strategy;
 mod tariff;
+mod constants;
 
 use chrono::{Duration, Local, TimeZone, Timelike, Utc, Date};
 use chrono_tz::{Europe::{Berlin, Tallinn}, Tz};
@@ -32,10 +33,6 @@ async fn main() -> color_eyre::Result<()> {
     println!("{:?}", moment);
 
     let local = Local::now().with_timezone(&Tallinn);
-    println!("{}", local.hour());
-    println!("{:?}", Tariff::get_tariff(&local));
-    let local_minus = local - Duration::hours(4);
-    println!("{:?}", Tariff::get_tariff(&local_minus));
 
     // let next_day = &date_matrix[0];
 
