@@ -1,8 +1,11 @@
-use std::{num::ParseIntError, str::FromStr};
+use std::{num::ParseIntError, str::FromStr, time::Duration};
 
 use chrono::{Date, DateTime, TimeZone};
 use chrono_tz::Tz;
-use color_eyre::eyre::{self, eyre};
+use color_eyre::{
+    eyre::{self, eyre},
+    owo_colors::OwoColorize,
+};
 use rust_decimal::Decimal;
 use thirtyfour::{
     prelude::{ElementQueryable, WebDriverResult},
@@ -10,13 +13,13 @@ use thirtyfour::{
 };
 
 use crate::{
-    constants::MarketTZ,
+    constants::MARKET_TZ,
     price_matrix::{DateColumn, PriceCell, PriceMatrix, PricePerMwh},
 };
 
-fn convert_price_to_decimal(string: &str) -> Decimal {
+fn convert_price_to_decimal(string: &str) -> eyre::Result<Decimal> {
     let string = string.replace(",", ".");
-    Decimal::from_str(&string).unwrap() // TODO: Replace with something better
+    Ok(Decimal::from_str(&string)?) // TODO: Replace with something better
 }
 
 fn convert_hour_to_u32(string: &str) -> Result<u32, ParseIntError> {
@@ -43,7 +46,6 @@ fn parse_date_ymd(date: &str, timezone: &Tz) -> Result<Date<Tz>, ParseIntError> 
 }
 
 fn parse_date(date: &str, timezone: &Tz) -> eyre::Result<Date<Tz>> {
-    println!("Parsing {}", date);
     let dmy = parse_date_dmy(date, timezone);
     if dmy.is_ok() {
         return Ok(dmy.unwrap());
@@ -56,11 +58,12 @@ fn parse_date(date: &str, timezone: &Tz) -> eyre::Result<Date<Tz>> {
 }
 
 pub fn retrieve_datetime(date: &str, hour: u32, timezone: &Tz) -> eyre::Result<DateTime<Tz>> {
-    let date = parse_date(date, timezone);
-    date.and_then(|d| Ok(d.and_hms(hour.into(), 0, 0)))
+    let date = parse_date(date, timezone)?;
+    date.and_hms_opt(hour, 0, 0)
+        .ok_or(eyre!("Invalid hour: {} {}", date, hour))
 }
 
-async fn get_dates<'a>(datatable: &WebElement<'a>) -> color_eyre::Result<Vec<String>> {
+async fn get_dates<'a>(datatable: &WebElement<'a>) -> eyre::Result<Vec<String>> {
     let mut vec = vec![];
     let headers = datatable
         .query(By::ClassName("column-headers"))
@@ -78,7 +81,7 @@ async fn get_dates<'a>(datatable: &WebElement<'a>) -> color_eyre::Result<Vec<Str
     Ok(vec)
 }
 
-async fn get_hour_from_cell<'a>(e: &WebElement<'a>) -> color_eyre::Result<u32> {
+async fn get_hour_from_element<'a>(e: &WebElement<'a>) -> eyre::Result<u32> {
     let e = e.text().await?;
     Ok(convert_hour_to_u32(&e)?)
 }
@@ -90,31 +93,35 @@ async fn row_iteration<'a>(
 ) -> color_eyre::Result<()> {
     let cells = row.find_elements(By::Tag("td")).await?;
     let mut cells = cells.iter();
+    println!("get cell");
     let hour_cell = match cells.next() {
         Some(a) => a,
         None => return Err(eyre!("Missing hour cell?")),
     };
-    let hour = get_hour_from_cell(hour_cell).await?;
+    println!("get_hour");
+    let hour = get_hour_from_element(hour_cell).await?;
+    println!("heck {}", hour);
 
     for (date_i, cell) in cells.enumerate() {
         match &mut date_vectors[date_i] {
             // check if column here isn't invalid
             Some(column) => {
                 let intext = cell.text().await?;
+                println!("al");
                 let dateline = &dates[date_i];
-                let moment = retrieve_datetime(dateline, hour, &MarketTZ);
-                match moment {
-                    Ok(moment) => {
-                        let price_cell = PriceCell {
-                            price: PricePerMwh(convert_price_to_decimal(&intext)),
-                            moment: moment,
-                            tariff_price: None,
-                            market_hour: hour,
-                        };
-                        column.cells.push(price_cell);
-                    }
-                    Err(e) => eprintln!("{}", e),
+                println!("hourZ: {}", hour);
+                let moment = retrieve_datetime(dateline, hour, &MARKET_TZ)?;
+                let dec_price = convert_price_to_decimal(&intext);
+                if dec_price.is_err() {
+                    continue;
                 }
+                let price_cell = PriceCell {
+                    price: PricePerMwh(dec_price.unwrap()),
+                    moment: moment,
+                    tariff_price: None,
+                    market_hour: hour,
+                };
+                column.cells.push(price_cell);
             }
             None => continue,
         }
@@ -123,7 +130,7 @@ async fn row_iteration<'a>(
     Ok(())
 }
 
-async fn retrieve_prices(driver: &WebDriver) -> color_eyre::Result<PriceMatrix> {
+async fn retrieve_prices(driver: &WebDriver) -> eyre::Result<PriceMatrix> {
     driver.query(By::Id("datatable")).exists().await?;
     let datatable = driver.query(By::Id("datatable")).first().await?;
     let dates = get_dates(&datatable).await?;
@@ -134,7 +141,7 @@ async fn retrieve_prices(driver: &WebDriver) -> color_eyre::Result<PriceMatrix> 
     let mut date_vectors: PriceMatrix = vec![];
 
     for i in 0..(dates.len()) {
-        match parse_date(&dates[i], &MarketTZ) {
+        match parse_date(&dates[i], &MARKET_TZ) {
             Ok(date) => date_vectors.push(Some(DateColumn {
                 date: date,
                 cells: vec![],
@@ -153,7 +160,7 @@ async fn retrieve_prices(driver: &WebDriver) -> color_eyre::Result<PriceMatrix> 
     Ok(date_vectors)
 }
 
-pub async fn fetch_prices_from_nord_pool() -> color_eyre::Result<PriceMatrix> {
+pub async fn fetch_prices_from_nord_pool() -> eyre::Result<PriceMatrix> {
     let mut caps = DesiredCapabilities::chrome();
     caps.add_chrome_arg("--enable-automation")?;
     let driver = WebDriver::new("http://localhost:4444/wd/hub", &caps).await?;
@@ -168,9 +175,13 @@ pub async fn fetch_prices_from_nord_pool() -> color_eyre::Result<PriceMatrix> {
 
     let date_vectors = retrieve_prices(&driver).await;
 
+    tokio::time::sleep(Duration::from_secs(5)).await;
+
     // println!("{:?}", date_vectors[0]);
 
+    println!("Close await");
     driver.close().await?;
+    println!("Close await done");
 
     Ok(date_vectors?)
 }

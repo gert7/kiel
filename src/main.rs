@@ -20,7 +20,7 @@ use crate::{
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    // let date_matrix = fetch_prices_from_nord_pool().await?;
+    // let date_matrix = fetch_prices_from_nord_pool().await;
 
     // println!("{:?}", sample_data);
 

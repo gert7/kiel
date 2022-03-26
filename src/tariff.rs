@@ -1,7 +1,7 @@
 use chrono::{DateTime, Datelike, Timelike, Weekday};
 use chrono_tz::Tz;
 
-use crate::constants::LocalTZ;
+use crate::constants::LOCAL_TZ;
 
 #[derive(Debug, PartialEq)]
 pub enum Tariff {
@@ -11,7 +11,7 @@ pub enum Tariff {
 
 impl Tariff {
     pub fn get_tariff(time: &DateTime<Tz>) -> Tariff {
-        let time = time.with_timezone(&LocalTZ);
+        let time = time.with_timezone(&LOCAL_TZ);
         let day = time.weekday();
         if [Weekday::Sat, Weekday::Sun].contains(&day) {
             Tariff::Night
@@ -26,7 +26,7 @@ impl Tariff {
     }
 
     pub fn get_tariff_excl_sunday(time: &DateTime<Tz>) -> Tariff {
-        let time = time.with_timezone(&LocalTZ);
+        let time = time.with_timezone(&LOCAL_TZ);
         let day = time.weekday();
         if day == Weekday::Sat {
             Tariff::Night

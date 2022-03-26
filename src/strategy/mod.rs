@@ -6,9 +6,9 @@ use crate::{
     tariff::Tariff,
 };
 
-mod default;
+// mod default;
 
-pub use default::{DefaultStrategy, DefaultStrategyExclSunday};
+// pub use default::{DefaultStrategy, DefaultStrategyExclSunday};
 
 #[derive(Debug, Clone)]
 pub enum PowerState {
@@ -37,7 +37,7 @@ pub fn truncate_to_24_hours(day_prices: &Vec<PriceCell>) -> Vec<PriceCell> {
             let day_cycle = add_almost_day(init.moment);
             let filtered_prices = sorted_prices
                 .into_iter()
-                .filter(|&price| price.moment <= day_cycle);
+                .filter(|price| price.moment <= day_cycle);
             filtered_prices.collect()
         }
         None => sorted_prices,
