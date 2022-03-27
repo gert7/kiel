@@ -1,4 +1,4 @@
-use chrono::{DateTime, Date};
+use chrono::{DateTime, Date, Duration};
 use chrono_tz::Tz;
 use rust_decimal::Decimal;
 
@@ -69,8 +69,35 @@ pub type DaySlice = Vec<PriceCell>;
 //     pub prices: Vec<PriceCell>,
 // }
 
+pub fn add_almost_day(dt: &DateTime<Tz>) -> DateTime<Tz> {
+    let hours = Duration::hours(23);
+    let minutes = Duration::minutes(59);
+    let seconds = Duration::seconds(59);
+    *dt + hours + minutes + seconds
+}
+
+pub fn truncate_to_24_hours(day_prices: &Vec<PriceCell>) -> Vec<PriceCell> {
+    let mut sorted_prices = day_prices.clone();
+    sorted_prices.sort_by(|a, b| a.moment.cmp(&b.moment));
+    let first = sorted_prices.first();
+    match first {
+        Some(init) => {
+            let day_cycle = add_almost_day(&init.moment);
+            let filtered_prices = sorted_prices
+                .into_iter()
+                .filter(|price| price.moment <= day_cycle);
+            filtered_prices.collect()
+        }
+        None => sorted_prices,
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use chrono::TimeZone;
+
+    use crate::constants::MARKET_TZ;
+
     use super::*;
 
     #[test]
@@ -85,5 +112,12 @@ mod tests {
         let kph = PriceCentsPerKwh(Decimal::new(948, 2));
         let mwh = PricePerMwh::from(&kph);
         assert!(mwh.0 == Decimal::new(948, 1));
+    }
+
+    #[test]
+    fn adds_almost_day() {
+        let date1 = MARKET_TZ.ymd(2022, 3, 3).and_hms(0, 0, 0);
+        let added = add_almost_day(&date1);
+        assert!(added == MARKET_TZ.ymd(2022, 3, 3).and_hms(23, 59, 59));
     }
 }

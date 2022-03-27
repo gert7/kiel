@@ -19,9 +19,11 @@ use crate::{
 
 fn convert_price_to_decimal(string: &str) -> eyre::Result<Decimal> {
     let string = string.replace(",", ".");
-    Ok(Decimal::from_str(&string)?) // TODO: Replace with something better
+    Ok(Decimal::from_str(&string)?)
 }
 
+/// Converts an hour string taken directly from an element,
+/// such as `01 - 02` to a `u32`.
 fn convert_hour_to_u32(string: &str) -> Result<u32, ParseIntError> {
     let mut string2 = string.to_owned();
     string2.truncate(2);
@@ -93,35 +95,28 @@ async fn row_iteration<'a>(
 ) -> color_eyre::Result<()> {
     let cells = row.find_elements(By::Tag("td")).await?;
     let mut cells = cells.iter();
-    println!("get cell");
     let hour_cell = match cells.next() {
         Some(a) => a,
         None => return Err(eyre!("Missing hour cell?")),
     };
-    println!("get_hour");
     let hour = get_hour_from_element(hour_cell).await?;
-    println!("heck {}", hour);
 
     for (date_i, cell) in cells.enumerate() {
         match &mut date_vectors[date_i] {
             // check if column here isn't invalid
             Some(column) => {
                 let intext = cell.text().await?;
-                println!("al");
                 let dateline = &dates[date_i];
-                println!("hourZ: {}", hour);
                 let moment = retrieve_datetime(dateline, hour, &MARKET_TZ)?;
-                let dec_price = convert_price_to_decimal(&intext);
-                if dec_price.is_err() {
-                    continue;
+                match convert_price_to_decimal(&intext) {
+                    Ok(dec_price) => column.cells.push(PriceCell {
+                        price: PricePerMwh(dec_price),
+                        moment: moment,
+                        tariff_price: None,
+                        market_hour: hour,
+                    }),
+                    Err(_) => continue,
                 }
-                let price_cell = PriceCell {
-                    price: PricePerMwh(dec_price.unwrap()),
-                    moment: moment,
-                    tariff_price: None,
-                    market_hour: hour,
-                };
-                column.cells.push(price_cell);
             }
             None => continue,
         }
@@ -143,7 +138,7 @@ async fn retrieve_prices(driver: &WebDriver) -> eyre::Result<PriceMatrix> {
     for i in 0..(dates.len()) {
         match parse_date(&dates[i], &MARKET_TZ) {
             Ok(date) => date_vectors.push(Some(DateColumn {
-                date: date,
+                date,
                 cells: vec![],
             })),
             Err(_) => date_vectors.push(None),
@@ -174,10 +169,6 @@ pub async fn fetch_prices_from_nord_pool() -> eyre::Result<PriceMatrix> {
     // tokio::time::sleep(Duration::from_secs(5)).await;
 
     let date_vectors = retrieve_prices(&driver).await;
-
-    tokio::time::sleep(Duration::from_secs(5)).await;
-
-    // println!("{:?}", date_vectors[0]);
 
     println!("Close await");
     driver.close().await?;

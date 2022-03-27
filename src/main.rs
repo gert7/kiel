@@ -1,18 +1,26 @@
 mod bar_chart;
+mod constants;
 mod nord_pool_spot;
 mod price_matrix;
+mod sample_data;
 mod strategy;
 mod tariff;
-mod constants;
 
-use chrono::{Duration, Local, TimeZone, Timelike, Utc, Date};
-use chrono_tz::{Europe::{Berlin, Tallinn}, Tz, America::Argentina::Buenos_Aires};
+use chrono::{Date, Duration, Local, TimeZone, Timelike, Utc};
+use chrono_tz::{
+    America::Argentina::Buenos_Aires,
+    Europe::{Berlin, Tallinn},
+    Tz,
+};
+use rand::thread_rng;
 use rust_decimal::Decimal;
 
 use crate::{
+    constants::MARKET_TZ,
     nord_pool_spot::fetch_prices_from_nord_pool,
-    price_matrix::{PriceCell, PriceCentsPerKwh, PricePerMwh},
-    tariff::Tariff, strategy::PowerStrategy,
+    price_matrix::{add_almost_day, PriceCell, PriceCentsPerKwh, PricePerMwh, DateColumn},
+    strategy::PowerStrategy,
+    tariff::Tariff,
 };
 
 #[tokio::main]
@@ -20,10 +28,13 @@ use crate::{
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    // let date_matrix = fetch_prices_from_nord_pool().await;
+    // let date_matrix = fetch_prices_from_nord_pool().await?;
 
-    // println!("{:?}", sample_data);
+    // for date in date_matrix {
+    //     println!("{:?}", date);
+    // }
 
+    // BAR CHART SECTION
     // bar_chart::draw(&date_matrix[0])?;
 
     let tariff_day = PriceCentsPerKwh(Decimal::new(616, 2));
@@ -53,15 +64,30 @@ async fn main() -> color_eyre::Result<()> {
     // println!("{} {}", kph, mwh);
 
     /// Wednesday
-    fn mmxxii_23_march() -> Date<Tz> { Berlin.ymd(2022, 3, 23) }
+    fn mmxxii_23_march() -> Date<Tz> {
+        Berlin.ymd(2022, 3, 23)
+    }
     /// Saturday
-    fn mmxxii_26_march() -> Date<Tz> { Berlin.ymd(2022, 3, 26) }
+    fn mmxxii_26_march() -> Date<Tz> {
+        Berlin.ymd(2022, 3, 26)
+    }
 
     // let date = mmxxii_23_march();
     // let planned_day = strategy::DefaultStrategy::plan_day(None);
     // for change in planned_day {
     //     println!("{:?} {:?}", change.moment, change.state);
     // }
+
+    let date1 = MARKET_TZ.ymd(2022, 3, 3).and_hms(0, 0, 0);
+    let date2 = add_almost_day(&date1);
+    println!("{} {}", date1, date2);
+
+    let date = MARKET_TZ.ymd(2022, 3, 3);
+
+    let sd = sample_data::sample_day(&date, 16, &mut thread_rng());
+    println!("Sample: {:?}", sd);
+
+    // bar_chart::draw(&sd)?;
 
     Ok(())
 }

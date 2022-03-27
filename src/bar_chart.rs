@@ -1,4 +1,4 @@
-
+use color_eyre::eyre::{eyre, self};
 use chrono::{Timelike, Datelike};
 use crossterm::{event::DisableMouseCapture, execute, terminal::EnterAlternateScreen};
 use rust_decimal::prelude::ToPrimitive;
@@ -9,16 +9,16 @@ use tui::{
     Terminal,
 };
 
-use crate::price_matrix::{DateColumn, PriceCell};
+use crate::price_matrix::{DateColumn, PriceCell, DaySlice};
 
 // fn date_chart_max(cells: &[(&str, u64)]) -> u64 {
 //     let prices = cells.iter().map(|c| c.1);
 //     prices.max().unwrap()
 // }
 
-fn price_cell_vec_to_chart_data(dc: &DateColumn) -> Vec<(String, u64)> {
+fn price_cell_vec_to_chart_data(dc: &Vec<PriceCell>) -> Vec<(String, u64)> {
     let mut result = vec![];
-    for cell in &dc.cells {
+    for cell in dc {
         let label = format!("{:02}", cell.moment.hour());
         let value = cell.price.0.to_u64().unwrap();
         result.push((label, value));
@@ -40,11 +40,12 @@ fn date_chart_max(cells: &Vec<PriceCell>) -> u64 {
     prices.max().unwrap()
 }
 
-pub fn draw(date: &DateColumn) -> color_eyre::Result<()> {
-    let bar_chart_max = date_chart_max(&date.cells);
-    let title = format!("{}-{}-{}", date.date.year(), date.date.month(), date.date.day());
+pub fn draw(slice: &Vec<PriceCell>) -> eyre::Result<()> {
+    let bar_chart_max = date_chart_max(slice);
+    let first_dt = slice.get(0).ok_or(eyre!("PriceCell vector is empty!"))?.moment;
+    let title = format!("{}-{}-{}", first_dt.year(), first_dt.month(), first_dt.day());
 
-    let bar_chart_data = price_cell_vec_to_chart_data(date);
+    let bar_chart_data = price_cell_vec_to_chart_data(&slice);
     let bar_chart_data = chart_data_as_str_ref(&bar_chart_data);
 
     let mut stdout = std::io::stdout();
