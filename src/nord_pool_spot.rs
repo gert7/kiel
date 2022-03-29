@@ -13,7 +13,7 @@ use thirtyfour::{
 };
 
 use crate::{
-    constants::MARKET_TZ,
+    constants::{DAY_TARIFF_PRICE, MARKET_TZ, NIGHT_TARIFF_PRICE},
     price_matrix::{DateColumn, PriceCell, PriceMatrix, PricePerMwh},
 };
 
@@ -112,7 +112,7 @@ async fn row_iteration<'a>(
                     Ok(dec_price) => column.cells.push(PriceCell {
                         price: PricePerMwh(dec_price),
                         moment: moment,
-                        tariff_price: None,
+                        tariff_price: Some(PriceCell::get_tariff_price_current(moment)),
                         market_hour: hour,
                     }),
                     Err(_) => continue,

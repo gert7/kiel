@@ -1,8 +1,8 @@
-use chrono::{DateTime, Date, Duration};
+use chrono::{Date, DateTime, Duration};
 use chrono_tz::Tz;
 use rust_decimal::Decimal;
 
-use crate::tariff::Tariff;
+use crate::{tariff::Tariff, constants::{DAY_TARIFF_PRICE, NIGHT_TARIFF_PRICE}};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct PricePerMwh(pub Decimal);
@@ -43,6 +43,25 @@ pub struct PriceCell {
 }
 
 impl PriceCell {
+    pub fn get_tariff_price(
+        moment: DateTime<Tz>,
+        day_tariff: &PriceCentsPerKwh,
+        night_tariff: &PriceCentsPerKwh,
+    ) -> PricePerMwh {
+        let tariff = Tariff::get_tariff(&moment);
+        let tariff_value = match tariff {
+            Tariff::Night => night_tariff,
+            Tariff::Day => day_tariff,
+        };
+        PricePerMwh::from(tariff_value)
+    }
+
+    pub fn get_tariff_price_current(
+        moment: DateTime<Tz>,
+    ) -> PricePerMwh {
+        Self::get_tariff_price(moment, &DAY_TARIFF_PRICE, &NIGHT_TARIFF_PRICE)
+    }
+
     fn add_tariff(&mut self, day_tariff: &PriceCentsPerKwh, night_tariff: &PriceCentsPerKwh) {
         let tariff = Tariff::get_tariff(&self.moment);
         let tariff_value = match tariff {
@@ -50,6 +69,14 @@ impl PriceCell {
             Tariff::Day => day_tariff,
         };
         self.tariff_price = Some(tariff_value.into());
+    }
+
+    fn total(&self) -> PricePerMwh {
+        let mut price = self.price.0;
+        self.tariff_price
+            .as_ref()
+            .map(|tariff| price += tariff.0);
+        PricePerMwh(price)
     }
 }
 
@@ -95,8 +122,9 @@ pub fn truncate_to_24_hours(day_prices: &Vec<PriceCell>) -> Vec<PriceCell> {
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
+    use rand::thread_rng;
 
-    use crate::constants::MARKET_TZ;
+    use crate::{constants::MARKET_TZ, sample_data::sample_day};
 
     use super::*;
 
@@ -119,5 +147,14 @@ mod tests {
         let date1 = MARKET_TZ.ymd(2022, 3, 3).and_hms(0, 0, 0);
         let added = add_almost_day(&date1);
         assert!(added == MARKET_TZ.ymd(2022, 3, 3).and_hms(23, 59, 59));
+    }
+
+    #[test]
+    fn truncates_properly() {
+        let date1 = MARKET_TZ.ymd(2022, 3, 3);
+        let sample_day = sample_day(&date1, 16, 30, &mut thread_rng());
+        assert!(sample_day.len() == 30);
+        let truncated = truncate_to_24_hours(&sample_day);
+        assert!(truncated.len() == 24);
     }
 }

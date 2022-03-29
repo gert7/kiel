@@ -14,14 +14,24 @@ use chrono_tz::{
 };
 use rand::thread_rng;
 use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 
 use crate::{
     constants::MARKET_TZ,
-    nord_pool_spot::fetch_prices_from_nord_pool,
-    price_matrix::{add_almost_day, PriceCell, PriceCentsPerKwh, PricePerMwh, DateColumn},
-    strategy::PowerStrategy,
-    tariff::Tariff,
+    price_matrix::{add_almost_day, PriceCentsPerKwh},
+    sample_data::sample_day_specified,
 };
+
+const SAMPLE_DAY_PRICES: [Decimal; 8] = [
+    dec!(39.43),
+    dec!(134.30),
+    dec!(74.10),
+    dec!(190.39),
+    dec!(90.39),
+    dec!(190.39),
+    dec!(10.39),
+    dec!(33.39),
+    ];
 
 #[tokio::main]
 #[doc(hidden)]
@@ -84,10 +94,13 @@ async fn main() -> color_eyre::Result<()> {
 
     let date = MARKET_TZ.ymd(2022, 3, 3);
 
-    let sd = sample_data::sample_day(&date, 16, &mut thread_rng());
-    println!("Sample: {:?}", sd);
-
     // bar_chart::draw(&sd)?;
+
+    let sam = sample_day_specified(&SAMPLE_DAY_PRICES, 14);
+
+    for d in sam {
+        println!("{:?}", d);
+    }
 
     Ok(())
 }

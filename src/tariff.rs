@@ -3,7 +3,7 @@ use chrono_tz::Tz;
 
 use crate::constants::LOCAL_TZ;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Tariff {
     Night,
     Day,
@@ -25,6 +25,8 @@ impl Tariff {
         }
     }
 
+    /// Gets the day-night tariff for a given moment in time,
+    /// but treats Sunday like a regular weekday.
     pub fn get_tariff_excl_sunday(time: &DateTime<Tz>) -> Tariff {
         let time = time.with_timezone(&LOCAL_TZ);
         let day = time.weekday();
