@@ -1,11 +1,7 @@
-use chrono::{Date, DateTime};
+use chrono::DateTime;
 use chrono_tz::Tz;
 
-use crate::{
-    price_matrix::{DaySlice, PriceCell},
-    tariff::Tariff,
-};
-
+use crate::{price_matrix::DaySlice, tariff::Tariff};
 use super::{HourStrategy, PlannedChange, PowerState, PowerStrategy};
 
 pub struct DefaultStrategy;
@@ -32,9 +28,10 @@ impl HourStrategy for DefaultStrategy {
 
 impl PowerStrategy for DefaultStrategy {
     fn plan_day(&self, day_prices: &DaySlice) -> Vec<PlannedChange> {
-        day_prices.iter().map(|hour| {
-            self.plan_hour(&hour.moment)
-        }).collect()
+        day_prices
+            .iter()
+            .map(|hour| self.plan_hour(&hour.moment))
+            .collect()
     }
 }
 
@@ -53,15 +50,16 @@ impl HourStrategy for DefaultStrategyExclSunday {
 
 impl PowerStrategy for DefaultStrategyExclSunday {
     fn plan_day(&self, day_prices: &DaySlice) -> Vec<PlannedChange> {
-        day_prices.iter().map(|hour| {
-            self.plan_hour(&hour.moment)
-        }).collect()
+        day_prices
+            .iter()
+            .map(|hour| self.plan_hour(&hour.moment))
+            .collect()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use chrono::TimeZone;
+    use chrono::{TimeZone, Date};
     use chrono_tz::Europe::Tallinn;
     use rand::thread_rng;
 

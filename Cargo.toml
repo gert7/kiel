@@ -19,4 +19,4 @@ crossterm = "0.23"
 tui = "0.17"
 rand = "0.8"
 dotenv = "0.15"
-hass-rs = { version = "0.2", features = ["tokio-runtime"] }
+# hass-rs = { version = "0.2", features = ["tokio-runtime"] }

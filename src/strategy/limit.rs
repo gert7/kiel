@@ -1,5 +1,3 @@
-use rust_decimal::Decimal;
-
 use crate::price_matrix::{DaySlice, PricePerMwh};
 
 use super::{HourStrategy, MaskablePowerStrategy, PlannedChange, PowerState};
@@ -42,6 +40,7 @@ impl MaskablePowerStrategy for PriceLimitStrategy {
 
 #[cfg(test)]
 mod test {
+    use rust_decimal::Decimal;
     use rust_decimal_macros::dec;
 
     use crate::{sample_data::sample_day_specified, strategy::default::DefaultStrategy};

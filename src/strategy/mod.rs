@@ -8,6 +8,7 @@ use crate::{
 mod always;
 mod default;
 mod limit;
+mod smart;
 
 // pub use default::{DefaultStrategy, DefaultStrategyExclSunday};
 
