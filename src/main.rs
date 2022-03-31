@@ -18,12 +18,8 @@ use chrono::{Date, Local, TimeZone, Utc};
 use chrono_tz::{
     America::Sao_Paulo,
     Europe::{Berlin, Tallinn},
-    Tz,
 };
-use color_eyre::owo_colors::OwoColorize;
 use diesel::prelude::*;
-use diesel::{Connection, PgConnection};
-use dotenv::dotenv;
 
 use proc_mutex::wait_for_file;
 use rust_decimal::Decimal;
@@ -49,8 +45,10 @@ async fn fetch_main() -> color_eyre::Result<()> {
     use schema::price_cells;
 
     let connection = database::establish_connection();
+
+    // diesel::delete(price_cells::table).execute(&connection)?;
+
     let date_matrix = nord_pool_spot::fetch_prices_from_nord_pool().await?;
-    println!("{:?}", date_matrix);
     let date_matrix = date_matrix
         .iter()
         .filter(|o| o.is_some())
@@ -65,9 +63,24 @@ async fn fetch_main() -> color_eyre::Result<()> {
                 .count()
                 .get_result::<i64>(&connection)
                 .expect("Unable to count in price_cells table!");
-            println!("{}", count);
+
+            if count == 0 {
+                let tariff = price.tariff_price.as_ref().map(|o| &o.0);
+                let new_price = NewPriceCellDB {
+                    price_mwh: &price.price.0,
+                    moment_utc: price.moment.with_timezone(&Utc),
+                    tariff_mwh: tariff,
+                    market_hour: price.market_hour.try_into().unwrap(),
+                };
+
+                let pcdb: PriceCellDB = diesel::insert_into(price_cells::table)
+                    .values(&new_price)
+                    .get_result(&connection)
+                    .expect("Failed to insert price.");
+            }
         }
     }
+
     Ok(())
 }
 
@@ -116,6 +129,7 @@ async fn hour_main() -> color_eyre::Result<()> {
 #[doc(hidden)]
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
+    println!("mysteri");
 
     let mut lockfile = wait_for_file();
 
