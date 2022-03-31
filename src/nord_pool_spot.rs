@@ -4,16 +4,15 @@ use chrono::{Date, DateTime, TimeZone};
 use chrono_tz::Tz;
 use color_eyre::{
     eyre::{self, eyre},
-    owo_colors::OwoColorize,
 };
 use rust_decimal::Decimal;
 use thirtyfour::{
-    prelude::{ElementQueryable, WebDriverResult},
+    prelude::ElementQueryable,
     By, DesiredCapabilities, WebDriver, WebElement,
 };
 
 use crate::{
-    constants::{DAY_TARIFF_PRICE, MARKET_TZ, NIGHT_TARIFF_PRICE},
+    constants::MARKET_TZ,
     price_matrix::{DateColumn, PriceMatrix, PricePerMwh}, price_cell::PriceCell,
 };
 
@@ -165,8 +164,6 @@ pub async fn fetch_prices_from_nord_pool() -> eyre::Result<PriceMatrix> {
             "https://www.nordpoolgroup.com/Market-data1/Dayahead/Area-Prices/EE/Hourly/?view=table",
         )
         .await?;
-
-    // tokio::time::sleep(Duration::from_secs(5)).await;
 
     let date_vectors = retrieve_prices(&driver).await;
 

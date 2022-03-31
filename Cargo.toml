@@ -3,7 +3,9 @@ name = "kiel"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# [[bin]]
+# name = "kiel-fetch"
+# path = "src/price_fetch.rs"
 
 [dependencies]
 color-eyre = "0.6"
@@ -21,3 +23,4 @@ rand = "0.8"
 dotenv = "0.15"
 # hass-rs = { version = "0.2", features = ["tokio-runtime"] }
 diesel = { version = "1.4", features = ["postgres", "chrono"] }
+fs2 = "0.4"

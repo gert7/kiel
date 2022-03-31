@@ -1,9 +1,8 @@
 use chrono::{Date, DateTime, Duration};
 use chrono_tz::Tz;
-use diesel::Queryable;
 use rust_decimal::Decimal;
 
-use crate::{tariff::Tariff, constants::{DAY_TARIFF_PRICE, NIGHT_TARIFF_PRICE}, price_cell::PriceCell};
+use crate::price_cell::PriceCell;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct PricePerMwh(pub Decimal);

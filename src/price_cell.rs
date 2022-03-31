@@ -1,9 +1,12 @@
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
-use color_eyre::owo_colors::OwoColorize;
 use rust_decimal::Decimal;
 
-use crate::{price_matrix::{PricePerMwh, CentsPerKwh}, tariff::Tariff, constants::{DAY_TARIFF_PRICE, NIGHT_TARIFF_PRICE, MARKET_TZ}};
+use crate::{
+    constants::{DAY_TARIFF_PRICE, MARKET_TZ, NIGHT_TARIFF_PRICE},
+    price_matrix::{CentsPerKwh, PricePerMwh},
+    tariff::Tariff,
+};
 
 #[derive(Clone, Debug, Queryable)]
 pub struct PriceCell {
@@ -75,10 +78,22 @@ impl From<PriceCellDB> for PriceCell {
 use super::schema::price_cells;
 
 #[derive(Insertable)]
-#[table_name="price_cells"]
-pub struct NewPriceCell<'a> {
+#[table_name = "price_cells"]
+pub struct NewPriceCellDB<'a> {
     pub price_mwh: &'a Decimal,
-    pub moment_utc: &'a DateTime<Utc>,
+    pub moment_utc: DateTime<Utc>,
     pub tariff_mwh: Option<&'a Decimal>,
-    pub market_hour: &'a i16,
+    pub market_hour: i16,
+}
+
+impl <'a> NewPriceCellDB<'a> {
+    fn new(pc: &'a PriceCell) -> Self {
+        let tariff_mwh = pc.tariff_price.as_ref().map(|ppm| &ppm.0);
+        NewPriceCellDB {
+            price_mwh: &pc.price.0,
+            moment_utc: pc.moment.with_timezone(&Utc),
+            tariff_mwh,
+            market_hour: pc.market_hour.try_into().unwrap(),
+        }
+    }
 }

@@ -2,31 +2,35 @@
 extern crate diesel;
 mod bar_chart;
 mod constants;
-mod models;
+mod database;
 mod nord_pool_spot;
 mod price_cell;
 mod price_matrix;
+mod proc_mutex;
 mod sample_data;
 mod schema;
 mod strategy;
 mod tariff;
 
-use std::env;
+use std::{env, fs::File, io::Write, time::Duration};
 
 use chrono::{Date, Local, TimeZone, Utc};
 use chrono_tz::{
+    America::Sao_Paulo,
     Europe::{Berlin, Tallinn},
     Tz,
 };
+use color_eyre::owo_colors::OwoColorize;
 use diesel::prelude::*;
 use diesel::{Connection, PgConnection};
 use dotenv::dotenv;
 
+use proc_mutex::wait_for_file;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
 use crate::{
-    price_cell::{NewPriceCell, PriceCell, PriceCellDB},
+    price_cell::{NewPriceCellDB, PriceCell, PriceCellDB},
     price_matrix::CentsPerKwh,
 };
 
@@ -41,21 +45,35 @@ const SAMPLE_DAY_PRICES: [Decimal; 8] = [
     dec!(33.39),
 ];
 
-fn establish_connection() -> PgConnection {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL").expect("No DATABASE_URL set!");
-    PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
-}
-
-#[tokio::main]
-#[doc(hidden)]
-async fn main() -> color_eyre::Result<()> {
+async fn fetch_main() -> color_eyre::Result<()> {
     use schema::price_cells;
 
-    color_eyre::install()?;
+    let connection = database::establish_connection();
+    let date_matrix = nord_pool_spot::fetch_prices_from_nord_pool().await?;
+    println!("{:?}", date_matrix);
+    let date_matrix = date_matrix
+        .iter()
+        .filter(|o| o.is_some())
+        .map(|o| o.as_ref().unwrap());
 
-    let connection = establish_connection();
+    for date in date_matrix {
+        for price in &date.cells {
+            let utc = price.moment.with_timezone(&Utc);
+            let count = price_cells::table
+                .filter(price_cells::moment_utc.eq(&utc))
+                .limit(5)
+                .count()
+                .get_result::<i64>(&connection)
+                .expect("Unable to count in price_cells table!");
+            println!("{}", count);
+        }
+    }
+    Ok(())
+}
+
+async fn hour_main() -> color_eyre::Result<()> {
+    use schema::price_cells;
+    let connection = database::establish_connection();
 
     let results = price_cells::table
         .filter(price_cells::market_hour.eq(19))
@@ -63,14 +81,14 @@ async fn main() -> color_eyre::Result<()> {
         .load::<PriceCellDB>(&connection)
         .expect("Erroir");
 
-    let new_price = NewPriceCell {
+    let new_price = NewPriceCellDB {
         price_mwh: &dec!(121.94),
-        moment_utc: &Tallinn
+        moment_utc: Sao_Paulo
             .ymd(2022, 3, 19)
             .and_hms(12, 43, 12)
             .with_timezone(&Utc),
         tariff_mwh: None,
-        market_hour: &12,
+        market_hour: 12,
     };
 
     let a: PriceCellDB = diesel::insert_into(price_cells::table)
@@ -78,7 +96,7 @@ async fn main() -> color_eyre::Result<()> {
         .get_result(&connection)
         .expect("Failed to insert");
 
-    // let date_matrix = fetch_prices_from_nord_pool().await?;
+    let b: PriceCell = a.into();
 
     // BAR CHART SECTION
     // bar_chart::draw(&date_matrix[0])?;
@@ -91,32 +109,39 @@ async fn main() -> color_eyre::Result<()> {
 
     let local = Local::now().with_timezone(&Tallinn);
 
-    // let next_day = &date_matrix[0];
+    Ok(())
+}
 
-    // println!("{:?}", date_matrix);
+#[tokio::main]
+#[doc(hidden)]
+async fn main() -> color_eyre::Result<()> {
+    color_eyre::install()?;
 
-    // match next_day {
-    //     Some(v) => {
-    //         for cell in &v.cells {
-    //             let difference = cell.moment - local;
-    //             println!("Time until: {:?}", difference.num_minutes() / 60);
-    //         }
-    //     },
-    //     None => todo!(),
-    // }
+    let mut lockfile = wait_for_file();
 
-    // let kph = PriceCentsPerKwh(Decimal::new(948, 2));
-    // let mwh = PriceCentsPerKwh::from(&kph);
-    // println!("{} {}", kph, mwh);
+    let mut args = std::env::args();
+    let second = args.nth(1);
+    let second = match second {
+        Some(v) => v,
+        None => {
+            eprintln!("\nPlease specify an execution mode:");
+            eprintln!("  --fetch");
+            eprintln!("  --hour\n");
+            std::process::exit(1);
+        }
+    };
 
-    /// Wednesday
-    fn mmxxii_23_march() -> Date<Tz> {
-        Berlin.ymd(2022, 3, 23)
+    if second == "--fetch" {
+        fetch_main().await?;
+    } else if second == "--hour" {
+        hour_main().await?;
+    } else {
+        eprintln!("Unknown mode: {}", second);
     }
-    /// Saturday
-    fn mmxxii_26_march() -> Date<Tz> {
-        Berlin.ymd(2022, 3, 26)
-    }
+
+    lockfile
+        .write(b"rub a dub dub thanks for the grub")
+        .unwrap();
 
     Ok(())
 }
