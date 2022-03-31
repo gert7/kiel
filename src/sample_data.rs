@@ -3,7 +3,7 @@ use chrono_tz::{Tz, Europe::Berlin};
 use rand::{Rng, thread_rng};
 use rust_decimal::Decimal;
 
-use crate::price_matrix::{DaySlice, PriceCell, PricePerMwh};
+use crate::{price_matrix::{DaySlice, PricePerMwh}, price_cell::PriceCell};
 
 fn random_price<R>(rng: &mut R) -> Decimal
 where

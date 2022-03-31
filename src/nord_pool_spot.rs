@@ -14,7 +14,7 @@ use thirtyfour::{
 
 use crate::{
     constants::{DAY_TARIFF_PRICE, MARKET_TZ, NIGHT_TARIFF_PRICE},
-    price_matrix::{DateColumn, PriceCell, PriceMatrix, PricePerMwh},
+    price_matrix::{DateColumn, PriceMatrix, PricePerMwh}, price_cell::PriceCell,
 };
 
 fn convert_price_to_decimal(string: &str) -> eyre::Result<Decimal> {

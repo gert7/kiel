@@ -1,8 +1,9 @@
 use chrono::{Date, DateTime, Duration};
 use chrono_tz::Tz;
+use diesel::Queryable;
 use rust_decimal::Decimal;
 
-use crate::{tariff::Tariff, constants::{DAY_TARIFF_PRICE, NIGHT_TARIFF_PRICE}};
+use crate::{tariff::Tariff, constants::{DAY_TARIFF_PRICE, NIGHT_TARIFF_PRICE}, price_cell::PriceCell};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct PricePerMwh(pub Decimal);
@@ -14,69 +15,23 @@ impl PricePerMwh {
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct PriceCentsPerKwh(pub Decimal);
+pub struct CentsPerKwh(pub Decimal);
 
-impl PriceCentsPerKwh {
-    fn new(cents_per_kwh: Decimal) -> PriceCentsPerKwh {
-        PriceCentsPerKwh(cents_per_kwh)
+impl CentsPerKwh {
+    fn new(cents_per_kwh: Decimal) -> CentsPerKwh {
+        CentsPerKwh(cents_per_kwh)
     }
 }
 
-impl From<&PricePerMwh> for PriceCentsPerKwh {
+impl From<&PricePerMwh> for CentsPerKwh {
     fn from(e_per_mwh: &PricePerMwh) -> Self {
-        PriceCentsPerKwh(e_per_mwh.0 / Decimal::from(10i32))
+        CentsPerKwh(e_per_mwh.0 / Decimal::from(10i32))
     }
 }
 
-impl From<&PriceCentsPerKwh> for PricePerMwh {
-    fn from(c_per_kwh: &PriceCentsPerKwh) -> Self {
+impl From<&CentsPerKwh> for PricePerMwh {
+    fn from(c_per_kwh: &CentsPerKwh) -> Self {
         PricePerMwh(c_per_kwh.0 * Decimal::from(10i32))
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct PriceCell {
-    pub price: PricePerMwh,
-    pub moment: DateTime<Tz>,
-    pub tariff_price: Option<PricePerMwh>,
-    pub market_hour: u32,
-}
-
-impl PriceCell {
-    pub fn get_tariff_price(
-        moment: DateTime<Tz>,
-        day_tariff: &PriceCentsPerKwh,
-        night_tariff: &PriceCentsPerKwh,
-    ) -> PricePerMwh {
-        let tariff = Tariff::get_tariff(&moment);
-        let tariff_value = match tariff {
-            Tariff::Night => night_tariff,
-            Tariff::Day => day_tariff,
-        };
-        PricePerMwh::from(tariff_value)
-    }
-
-    pub fn get_tariff_price_current(
-        moment: DateTime<Tz>,
-    ) -> PricePerMwh {
-        Self::get_tariff_price(moment, &DAY_TARIFF_PRICE, &NIGHT_TARIFF_PRICE)
-    }
-
-    fn add_tariff(&mut self, day_tariff: &PriceCentsPerKwh, night_tariff: &PriceCentsPerKwh) {
-        let tariff = Tariff::get_tariff(&self.moment);
-        let tariff_value = match tariff {
-            Tariff::Night => night_tariff,
-            Tariff::Day => day_tariff,
-        };
-        self.tariff_price = Some(tariff_value.into());
-    }
-
-    fn total(&self) -> PricePerMwh {
-        let mut price = self.price.0;
-        self.tariff_price
-            .as_ref()
-            .map(|tariff| price += tariff.0);
-        PricePerMwh(price)
     }
 }
 
@@ -131,13 +86,13 @@ mod tests {
     #[test]
     fn converts_to_cpkh() {
         let mwh = PricePerMwh(Decimal::new(14899, 2));
-        let kph = PriceCentsPerKwh::from(&mwh);
+        let kph = CentsPerKwh::from(&mwh);
         assert!(kph.0 == Decimal::new(14899, 3));
     }
 
     #[test]
     fn converts_to_mh() {
-        let kph = PriceCentsPerKwh(Decimal::new(948, 2));
+        let kph = CentsPerKwh(Decimal::new(948, 2));
         let mwh = PricePerMwh::from(&kph);
         assert!(mwh.0 == Decimal::new(948, 1));
     }

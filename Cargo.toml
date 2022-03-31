@@ -12,11 +12,12 @@ thirtyfour = "0.28"
 tokio = "1.17"
 chrono = "0.4"
 chrono-tz = "0.6"
-rust_decimal = "1.22"
-rust_decimal_macros = "1.22" # messes up the analyzer for chrono-tz
+rust_decimal = { version = "1.22", features = ["db-diesel-postgres"] }
+rust_decimal_macros = "1.22"
 lazy_static = "1.4"
 crossterm = "0.23"
 tui = "0.17"
 rand = "0.8"
 dotenv = "0.15"
 # hass-rs = { version = "0.2", features = ["tokio-runtime"] }
+diesel = { version = "1.4", features = ["postgres", "chrono"] }

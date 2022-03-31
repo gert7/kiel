@@ -5,6 +5,8 @@ use crate::{
     price_matrix::{DaySlice},
 };
 
+use self::{always::{AlwaysOnStrategy, AlwaysOffStrategy}, default::DefaultStrategy, smart::SmartStrategy};
+
 mod always;
 mod default;
 mod limit;

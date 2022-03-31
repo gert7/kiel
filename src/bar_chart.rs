@@ -9,7 +9,7 @@ use tui::{
     Terminal,
 };
 
-use crate::price_matrix::{DateColumn, PriceCell, DaySlice};
+use crate::price_cell::PriceCell;
 
 // fn date_chart_max(cells: &[(&str, u64)]) -> u64 {
 //     let prices = cells.iter().map(|c| c.1);

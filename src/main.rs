@@ -1,25 +1,33 @@
+#[macro_use]
+extern crate diesel;
 mod bar_chart;
 mod constants;
+mod models;
 mod nord_pool_spot;
+mod price_cell;
 mod price_matrix;
 mod sample_data;
+mod schema;
 mod strategy;
 mod tariff;
 
-use chrono::{Date, Duration, Local, TimeZone, Timelike, Utc};
+use std::env;
+
+use chrono::{Date, Local, TimeZone, Utc};
 use chrono_tz::{
-    America::Argentina::Buenos_Aires,
     Europe::{Berlin, Tallinn},
     Tz,
 };
-use rand::thread_rng;
+use diesel::prelude::*;
+use diesel::{Connection, PgConnection};
+use dotenv::dotenv;
+
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
 use crate::{
-    constants::MARKET_TZ,
-    price_matrix::{add_almost_day, PriceCentsPerKwh},
-    sample_data::sample_day_specified,
+    price_cell::{NewPriceCell, PriceCell, PriceCellDB},
+    price_matrix::CentsPerKwh,
 };
 
 const SAMPLE_DAY_PRICES: [Decimal; 8] = [
@@ -31,24 +39,52 @@ const SAMPLE_DAY_PRICES: [Decimal; 8] = [
     dec!(190.39),
     dec!(10.39),
     dec!(33.39),
-    ];
+];
+
+fn establish_connection() -> PgConnection {
+    dotenv().ok();
+
+    let database_url = env::var("DATABASE_URL").expect("No DATABASE_URL set!");
+    PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
+}
 
 #[tokio::main]
 #[doc(hidden)]
 async fn main() -> color_eyre::Result<()> {
+    use schema::price_cells;
+
     color_eyre::install()?;
 
-    // let date_matrix = fetch_prices_from_nord_pool().await?;
+    let connection = establish_connection();
 
-    // for date in date_matrix {
-    //     println!("{:?}", date);
-    // }
+    let results = price_cells::table
+        .filter(price_cells::market_hour.eq(19))
+        .limit(5)
+        .load::<PriceCellDB>(&connection)
+        .expect("Erroir");
+
+    let new_price = NewPriceCell {
+        price_mwh: &dec!(121.94),
+        moment_utc: &Tallinn
+            .ymd(2022, 3, 19)
+            .and_hms(12, 43, 12)
+            .with_timezone(&Utc),
+        tariff_mwh: None,
+        market_hour: &12,
+    };
+
+    let a: PriceCellDB = diesel::insert_into(price_cells::table)
+        .values(&new_price)
+        .get_result(&connection)
+        .expect("Failed to insert");
+
+    // let date_matrix = fetch_prices_from_nord_pool().await?;
 
     // BAR CHART SECTION
     // bar_chart::draw(&date_matrix[0])?;
 
-    let tariff_day = PriceCentsPerKwh(Decimal::new(616, 2));
-    let tariff_night = PriceCentsPerKwh(Decimal::new(358, 2));
+    let tariff_day = CentsPerKwh(Decimal::new(616, 2));
+    let tariff_night = CentsPerKwh(Decimal::new(358, 2));
 
     let moment = nord_pool_spot::retrieve_datetime("2022-03-22", 3, &Berlin).unwrap();
     println!("{:?}", moment);
@@ -80,26 +116,6 @@ async fn main() -> color_eyre::Result<()> {
     /// Saturday
     fn mmxxii_26_march() -> Date<Tz> {
         Berlin.ymd(2022, 3, 26)
-    }
-
-    // let date = mmxxii_23_march();
-    // let planned_day = strategy::DefaultStrategy::plan_day(None);
-    // for change in planned_day {
-    //     println!("{:?} {:?}", change.moment, change.state);
-    // }
-
-    let date1 = MARKET_TZ.ymd(2022, 3, 3).and_hms(0, 0, 0);
-    let date2 = add_almost_day(&date1);
-    println!("{} {}", date1, date2);
-
-    let date = MARKET_TZ.ymd(2022, 3, 3);
-
-    // bar_chart::draw(&sd)?;
-
-    let sam = sample_day_specified(&SAMPLE_DAY_PRICES, 14);
-
-    for d in sam {
-        println!("{:?}", d);
     }
 
     Ok(())
