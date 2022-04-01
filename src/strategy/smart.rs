@@ -8,14 +8,12 @@ use super::{PlannedChange, PowerStrategy, PriceChangeUnit};
 
 #[derive(Deserialize)]
 pub struct SmartStrategy {
-    hard_limit_mwh: Decimal,
     hour_budget: u32,
 }
 
 impl SmartStrategy {
     pub fn new() -> SmartStrategy {
         SmartStrategy {
-            hard_limit_mwh: dec!(180.0),
             hour_budget: 9,
         }
     }

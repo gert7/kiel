@@ -2,7 +2,7 @@ use color_eyre::eyre::{self, eyre};
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
-use crate::strategy::{smart::SmartStrategy, always::{AlwaysOnStrategy, AlwaysOffStrategy}};
+use crate::strategy::{smart::SmartStrategy, always::{AlwaysOnStrategy, AlwaysOffStrategy}, limit::PriceLimitStrategy};
 
 #[derive(Deserialize)]
 #[serde(tag = "mode")]
@@ -13,10 +13,17 @@ pub enum DayStrategyConfig {
 }
 
 #[derive(Deserialize)]
+#[serde(tag = "mode")]
+pub enum DayStrategyFilter {
+    PriceLimit(PriceLimitStrategy)
+}
+
+#[derive(Deserialize)]
 pub struct Day {
     pub hours_always_on: Option<Vec<u32>>,
     pub hours_always_off: Option<Vec<u32>>,
     pub config: Option<DayStrategyConfig>,
+    pub filter: Option<DayStrategyFilter>,
 }
 
 #[derive(Deserialize)]
