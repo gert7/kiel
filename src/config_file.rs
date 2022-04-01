@@ -2,11 +2,12 @@ use color_eyre::eyre::{self, eyre};
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
-use crate::strategy::{smart::SmartStrategy, always::AlwaysOnStrategy};
+use crate::strategy::{smart::SmartStrategy, always::{AlwaysOnStrategy, AlwaysOffStrategy}};
 
 #[derive(Deserialize)]
-#[serde(tag = "type")]
+#[serde(tag = "mode")]
 pub enum DayStrategyConfig {
+    AlwaysOff(AlwaysOffStrategy),
     AlwaysOn(AlwaysOnStrategy),
     Smart(SmartStrategy),
 }
@@ -31,7 +32,6 @@ pub struct ConfigFile {
 
 pub fn decode_config() -> eyre::Result<()> {
     let conf = std::fs::read_to_string("asdf.toml")?;
-    let raw = conf.parse::<Value>()?;
     let config_file = toml::from_str::<ConfigFile>(&conf).unwrap();
     let smart = config_file.tuesday.config.unwrap();
     match smart {
@@ -39,6 +39,7 @@ pub fn decode_config() -> eyre::Result<()> {
             println!("Always on");
         },
         DayStrategyConfig::Smart(cfg) => todo!(),
+        DayStrategyConfig::AlwaysOff(_) => todo!(),
     }
     Ok(())
 }

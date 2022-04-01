@@ -2,9 +2,9 @@ use chrono::DateTime;
 use chrono_tz::Tz;
 use serde::Deserialize;
 
-use crate::price_matrix::DaySlice;
+use crate::{price_cell::PriceCell, price_matrix::DaySlice};
 
-use super::{HourStrategy, PlannedChange, PowerState, PowerStrategy};
+use super::{HourStrategy, PlannedChange, PowerState, PowerStrategy, PriceChangeUnit};
 
 #[derive(Deserialize)]
 pub struct AlwaysOnStrategy;
@@ -19,10 +19,17 @@ impl HourStrategy for AlwaysOnStrategy {
 }
 
 impl PowerStrategy for AlwaysOnStrategy {
-    fn plan_day(&self, day_prices: &DaySlice) -> Vec<PlannedChange> {
-        day_prices.iter().map(|hour| {
-            PlannedChange { moment: hour.moment, state: PowerState::On }
-        }).collect()
+    fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>> {
+        day_prices
+            .iter()
+            .map(|price| PriceChangeUnit {
+                price,
+                change: PlannedChange {
+                    moment: price.moment,
+                    state: PowerState::On,
+                },
+            })
+            .collect()
     }
 }
 
@@ -39,9 +46,16 @@ impl HourStrategy for AlwaysOffStrategy {
 }
 
 impl PowerStrategy for AlwaysOffStrategy {
-    fn plan_day(&self, day_prices: &DaySlice) -> Vec<PlannedChange> {
-        day_prices.iter().map(|hour| {
-            PlannedChange { moment: hour.moment, state: PowerState::Off }
-        }).collect()
+    fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>> {
+        day_prices
+            .iter()
+            .map(|price| PriceChangeUnit {
+                price,
+                change: PlannedChange {
+                    moment: price.moment,
+                    state: PowerState::Off,
+                },
+            })
+            .collect()
     }
 }

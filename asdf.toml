@@ -4,14 +4,17 @@
 
 
 [monday.config]
-type = "Smart"
+mode = "Limit"
 hard_limit_mwh = 180.21
 hour_budget = 9
+
+[monday.config.mask]
+mode = "AlwaysOn"
 
 [tuesday]
 
 [tuesday.config]
-type = "AlwaysOn"
+mode = "AlwaysOn"
 
 [wednesday]
 

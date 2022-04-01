@@ -2,7 +2,7 @@ use chrono::DateTime;
 use chrono_tz::Tz;
 
 use crate::{
-    price_matrix::{DaySlice},
+    price_matrix::{DaySlice}, price_cell::PriceCell,
 };
 
 pub mod always;
@@ -18,13 +18,21 @@ pub enum PowerState {
     Off,
 }
 
+#[derive(Clone, Copy)]
 pub struct PlannedChange {
     pub moment: DateTime<Tz>,
     pub state: PowerState,
 }
 
+#[derive(Clone, Copy)]
+pub struct PriceChangeUnit<'a> {
+    pub price: &'a PriceCell,
+    pub change: PlannedChange,
+}
+
 /// A power switching strategy simple enough
-/// to only provide a power state for a single hour.
+/// to only provide a power state for a single hour
+/// with no price information provided.
 pub trait HourStrategy {
     fn plan_hour(&self, datetime: &DateTime<Tz>) -> PlannedChange;
 }
@@ -33,14 +41,12 @@ pub trait HourStrategy {
 /// A strategy only has to consider the first 24 hours
 /// of the provided day slice.
 pub trait PowerStrategy {
-    fn plan_day(&self, day_prices: &DaySlice) -> Vec<PlannedChange>;
+    fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>>;
 }
 
 /// A power switching strategy that can leave some
 /// hours to be filled by some other provided [`HourStrategy`]
 /// by setting the hour to None instead of Some.
 pub trait MaskablePowerStrategy {
-    fn plan_day_masked(&self, day_prices: &DaySlice, mask: &dyn HourStrategy) -> Vec<PlannedChange>;
-
-    fn mask_description(&self) -> &'static str;
+    fn plan_day_masked<'a>(&self, changes: &'a Vec<PriceChangeUnit>) -> Vec<PriceChangeUnit<'a>>;
 }

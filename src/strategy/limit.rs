@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use crate::price_matrix::{DaySlice, PricePerMwh};
 
-use super::{HourStrategy, MaskablePowerStrategy, PlannedChange, PowerState};
+use super::{HourStrategy, MaskablePowerStrategy, PlannedChange, PowerState, PriceChangeUnit};
 
 #[derive(Deserialize)]
 pub struct PriceLimitStrategy {
@@ -17,28 +17,23 @@ impl PriceLimitStrategy {
 }
 
 impl MaskablePowerStrategy for PriceLimitStrategy {
-    fn plan_day_masked(
+    fn plan_day_masked<'a>(
         &self,
-        day_prices: &DaySlice,
-        mask: &dyn HourStrategy,
-    ) -> Vec<PlannedChange> {
-        day_prices
+        mask: &'a Vec<PriceChangeUnit>,
+    ) -> Vec<PriceChangeUnit<'a>> {
+        mask
             .iter()
-            .map(|price| {
-                if price.price.0 > self.limit_mwh {
-                    PlannedChange {
-                        moment: price.moment,
+            .map(|pcu| {
+                if pcu.price.price.0 > self.limit_mwh {
+                    PriceChangeUnit { price: pcu.price, change: PlannedChange {
+                        moment: pcu.price.moment,
                         state: PowerState::Off,
-                    }
+                    }}
                 } else {
-                    mask.plan_hour(&price.moment)
+                    *pcu
                 }
             })
             .collect()
-    }
-
-    fn mask_description(&self) -> &'static str {
-        "fallback"
     }
 }
 
@@ -47,7 +42,7 @@ mod test {
     use rust_decimal::Decimal;
     use rust_decimal_macros::dec;
 
-    use crate::{sample_data::sample_day_specified, strategy::default::DefaultStrategy};
+    use crate::{sample_data::sample_day_specified, strategy::{default::DefaultStrategy, PowerStrategy}};
 
     use super::*;
     const SAMPLE_DAY_PRICES: [Decimal; 8] = [
@@ -64,16 +59,16 @@ mod test {
     #[test]
     fn hits_limit() {
         let sample_day = sample_day_specified(&SAMPLE_DAY_PRICES, 0);
-        let mask = DefaultStrategy;
+        let base = DefaultStrategy.plan_day(&sample_day);
         let result =
-            PriceLimitStrategy::new(PricePerMwh(dec!(150.0))).plan_day_masked(&sample_day, &mask);
-        assert!(result[0].state == PowerState::On);
-        assert!(result[1].state == PowerState::On);
-        assert!(result[2].state == PowerState::On);
-        assert!(result[3].state == PowerState::Off);
-        assert!(result[4].state == PowerState::On);
-        assert!(result[5].state == PowerState::Off);
-        assert!(result[6].state == PowerState::Off);
-        assert!(result[7].state == PowerState::Off);
+            PriceLimitStrategy::new(PricePerMwh(dec!(150.0))).plan_day_masked(&base);
+        assert!(result[0].change.state == PowerState::On);
+        assert!(result[1].change.state == PowerState::On);
+        assert!(result[2].change.state == PowerState::On);
+        assert!(result[3].change.state == PowerState::Off);
+        assert!(result[4].change.state == PowerState::On);
+        assert!(result[5].change.state == PowerState::Off);
+        assert!(result[6].change.state == PowerState::Off);
+        assert!(result[7].change.state == PowerState::Off);
     }
 }

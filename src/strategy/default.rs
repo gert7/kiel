@@ -2,7 +2,7 @@ use chrono::DateTime;
 use chrono_tz::Tz;
 
 use crate::{price_matrix::DaySlice, tariff::Tariff};
-use super::{HourStrategy, PlannedChange, PowerState, PowerStrategy};
+use super::{HourStrategy, PlannedChange, PowerState, PowerStrategy, PriceChangeUnit};
 
 pub struct DefaultStrategy;
 
@@ -27,32 +27,10 @@ impl HourStrategy for DefaultStrategy {
 }
 
 impl PowerStrategy for DefaultStrategy {
-    fn plan_day(&self, day_prices: &DaySlice) -> Vec<PlannedChange> {
+    fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>> {
         day_prices
             .iter()
-            .map(|hour| self.plan_hour(&hour.moment))
-            .collect()
-    }
-}
-
-pub struct DefaultStrategyExclSunday;
-
-impl HourStrategy for DefaultStrategyExclSunday {
-    fn plan_hour(&self, datetime: &DateTime<Tz>) -> PlannedChange {
-        let tariff = Tariff::get_tariff_excl_sunday(&datetime);
-        let state = DefaultStrategy::tariff_to_power_state(tariff);
-        PlannedChange {
-            moment: *datetime,
-            state,
-        }
-    }
-}
-
-impl PowerStrategy for DefaultStrategyExclSunday {
-    fn plan_day(&self, day_prices: &DaySlice) -> Vec<PlannedChange> {
-        day_prices
-            .iter()
-            .map(|hour| self.plan_hour(&hour.moment))
+            .map(|price| PriceChangeUnit {price, change: self.plan_hour(&price.moment)})
             .collect()
     }
 }
@@ -82,13 +60,13 @@ mod tests {
         let date = mmxxii_23_march();
         let sample_day = sample_day(&date, 14, 24, &mut thread_rng());
         let planned_day = DefaultStrategy.plan_day(&sample_day);
-        assert!(planned_day[0].moment == date.and_hms(14, 0, 0));
-        assert!(planned_day[1].moment == date.and_hms(15, 0, 0));
+        assert!(planned_day[0].change.moment == date.and_hms(14, 0, 0));
+        assert!(planned_day[1].change.moment == date.and_hms(15, 0, 0));
 
-        assert!(planned_day[0].state == PowerState::Off);
-        assert!(planned_day[1].state == PowerState::Off);
-        assert!(planned_day[10].state == PowerState::On);
-        assert!(planned_day[23].state == PowerState::Off);
+        assert!(planned_day[0].change.state == PowerState::Off);
+        assert!(planned_day[1].change.state == PowerState::Off);
+        assert!(planned_day[10].change.state == PowerState::On);
+        assert!(planned_day[23].change.state == PowerState::Off);
     }
 
     #[test]
@@ -96,20 +74,10 @@ mod tests {
         let date = mmxxii_19_march();
         let sample_day = sample_day(&date, 14, 24, &mut thread_rng());
         let planned_day = DefaultStrategy.plan_day(&sample_day);
-        assert!(planned_day[0].state == PowerState::On);
-        assert!(planned_day[1].state == PowerState::On);
-        assert!(planned_day[10].state == PowerState::On);
-        assert!(planned_day[23].state == PowerState::On);
+        assert!(planned_day[0].change.state == PowerState::On);
+        assert!(planned_day[1].change.state == PowerState::On);
+        assert!(planned_day[10].change.state == PowerState::On);
+        assert!(planned_day[23].change.state == PowerState::On);
     }
 
-    #[test]
-    fn makes_default_strategy_on_saturday_excl_sunday() {
-        let date = mmxxii_19_march();
-        let sample_day = sample_day(&date, 14, 24, &mut thread_rng());
-        let planned_day = DefaultStrategyExclSunday.plan_day(&sample_day);
-        assert!(planned_day[0].state == PowerState::On);
-        assert!(planned_day[1].state == PowerState::On);
-        assert!(planned_day[10].state == PowerState::On);
-        assert!(planned_day[23].state == PowerState::Off);
-    }
 }
