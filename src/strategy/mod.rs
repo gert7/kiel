@@ -44,9 +44,8 @@ pub trait PowerStrategy {
     fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>>;
 }
 
-/// A power switching strategy that can leave some
-/// hours to be filled by some other provided [`HourStrategy`]
-/// by setting the hour to None instead of Some.
+/// A power switching strategy that accepts a set of
+/// already-set price changes.
 pub trait MaskablePowerStrategy {
     fn plan_day_masked<'a>(&self, changes: &'a Vec<PriceChangeUnit>) -> Vec<PriceChangeUnit<'a>>;
 }

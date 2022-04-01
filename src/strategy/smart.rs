@@ -11,14 +11,6 @@ pub struct SmartStrategy {
     hour_budget: u32,
 }
 
-impl SmartStrategy {
-    pub fn new() -> SmartStrategy {
-        SmartStrategy {
-            hour_budget: 9,
-        }
-    }
-}
-
 impl PowerStrategy for SmartStrategy {
     fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>> {
         let mut remaining_hours = self.hour_budget;

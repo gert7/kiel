@@ -15,13 +15,14 @@ mod tariff;
 
 use std::{env, fs::File, io::Write, time::Duration};
 
-use chrono::{Date, Local, TimeZone, Utc};
+use chrono::{Date, Local, TimeZone, Utc, Datelike};
 use chrono_tz::{
     America::Sao_Paulo,
     Europe::{Berlin, Tallinn},
 };
 use color_eyre::eyre;
 use color_eyre::eyre::eyre;
+use config_file::ConfigFile;
 use constants::{MARKET_TZ, LOCAL_TZ};
 use diesel::{prelude::*, expression::subselect::ValidSubselect};
 
@@ -31,7 +32,7 @@ use rust_decimal_macros::dec;
 
 use crate::{
     price_cell::{NewPriceCellDB, PriceCell, PriceCellDB},
-    price_matrix::CentsPerKwh, config_file::decode_config,
+    price_matrix::CentsPerKwh,
 };
 
 const SAMPLE_DAY_PRICES: [Decimal; 8] = [
@@ -89,11 +90,10 @@ async fn fetch_main() -> eyre::Result<()> {
 }
 
 async fn planner_main() -> eyre::Result<()> {
-    use toml::Value;
-
     let today = Utc::now().with_timezone(&LOCAL_TZ).date();
-    let tomorrow = today + chrono::Duration::days(1);
-    decode_config()?;
+    let day_name = today.weekday();
+    let config = ConfigFile::decode_config("asdf.toml")?;
+    let config_today = config.get_day(&day_name);
     Ok(())
 }
 

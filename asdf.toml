@@ -3,17 +3,17 @@
 [monday]
 
 
-[monday.config]
+[monday.strategy]
 mode = "Limit"
-hard_limit_mwh = 180.21
+limit_mwh = 180.21
 hour_budget = 9
 
-[monday.config.mask]
+[monday.base]
 mode = "AlwaysOn"
 
 [tuesday]
 
-[tuesday.config]
+[tuesday.base]
 mode = "AlwaysOn"
 
 [wednesday]

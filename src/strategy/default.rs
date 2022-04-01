@@ -1,12 +1,14 @@
 use chrono::DateTime;
 use chrono_tz::Tz;
+use serde::Deserialize;
 
 use crate::{price_matrix::DaySlice, tariff::Tariff};
 use super::{HourStrategy, PlannedChange, PowerState, PowerStrategy, PriceChangeUnit};
 
-pub struct DefaultStrategy;
+#[derive(Deserialize)]
+pub struct TariffStrategy;
 
-impl DefaultStrategy {
+impl TariffStrategy {
     fn tariff_to_power_state(tariff: Tariff) -> PowerState {
         match tariff {
             Tariff::Night => PowerState::On,
@@ -15,10 +17,10 @@ impl DefaultStrategy {
     }
 }
 
-impl HourStrategy for DefaultStrategy {
+impl HourStrategy for TariffStrategy {
     fn plan_hour(&self, datetime: &DateTime<Tz>) -> PlannedChange {
         let tariff = Tariff::get_tariff(&datetime);
-        let state = DefaultStrategy::tariff_to_power_state(tariff);
+        let state = TariffStrategy::tariff_to_power_state(tariff);
         PlannedChange {
             moment: *datetime,
             state,
@@ -26,7 +28,7 @@ impl HourStrategy for DefaultStrategy {
     }
 }
 
-impl PowerStrategy for DefaultStrategy {
+impl PowerStrategy for TariffStrategy {
     fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>> {
         day_prices
             .iter()
@@ -59,7 +61,7 @@ mod tests {
     fn makes_default_strategy() {
         let date = mmxxii_23_march();
         let sample_day = sample_day(&date, 14, 24, &mut thread_rng());
-        let planned_day = DefaultStrategy.plan_day(&sample_day);
+        let planned_day = TariffStrategy.plan_day(&sample_day);
         assert!(planned_day[0].change.moment == date.and_hms(14, 0, 0));
         assert!(planned_day[1].change.moment == date.and_hms(15, 0, 0));
 
@@ -73,7 +75,7 @@ mod tests {
     fn makes_default_strategy_on_saturday() {
         let date = mmxxii_19_march();
         let sample_day = sample_day(&date, 14, 24, &mut thread_rng());
-        let planned_day = DefaultStrategy.plan_day(&sample_day);
+        let planned_day = TariffStrategy.plan_day(&sample_day);
         assert!(planned_day[0].change.state == PowerState::On);
         assert!(planned_day[1].change.state == PowerState::On);
         assert!(planned_day[10].change.state == PowerState::On);

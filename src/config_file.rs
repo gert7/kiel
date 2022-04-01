@@ -1,29 +1,36 @@
+use chrono::Weekday;
 use color_eyre::eyre::{self, eyre};
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
-use crate::strategy::{smart::SmartStrategy, always::{AlwaysOnStrategy, AlwaysOffStrategy}, limit::PriceLimitStrategy};
+use crate::strategy::{
+    always::{AlwaysOffStrategy, AlwaysOnStrategy},
+    default::TariffStrategy,
+    limit::PriceLimitStrategy,
+    smart::SmartStrategy,
+};
 
 #[derive(Deserialize)]
 #[serde(tag = "mode")]
-pub enum DayStrategyConfig {
+pub enum DayBasePlan {
     AlwaysOff(AlwaysOffStrategy),
     AlwaysOn(AlwaysOnStrategy),
-    Smart(SmartStrategy),
+    Tariff(TariffStrategy),
 }
 
 #[derive(Deserialize)]
 #[serde(tag = "mode")]
-pub enum DayStrategyFilter {
-    PriceLimit(PriceLimitStrategy)
+pub enum DayStrategy {
+    Limit(PriceLimitStrategy),
+    Smart(SmartStrategy),
 }
 
 #[derive(Deserialize)]
 pub struct Day {
     pub hours_always_on: Option<Vec<u32>>,
     pub hours_always_off: Option<Vec<u32>>,
-    pub config: Option<DayStrategyConfig>,
-    pub filter: Option<DayStrategyFilter>,
+    pub base: Option<DayBasePlan>,
+    pub strategy: Option<DayStrategy>,
 }
 
 #[derive(Deserialize)]
@@ -37,16 +44,22 @@ pub struct ConfigFile {
     pub sunday: Day,
 }
 
-pub fn decode_config() -> eyre::Result<()> {
-    let conf = std::fs::read_to_string("asdf.toml")?;
-    let config_file = toml::from_str::<ConfigFile>(&conf).unwrap();
-    let smart = config_file.tuesday.config.unwrap();
-    match smart {
-        DayStrategyConfig::AlwaysOn(cfg) => {
-            println!("Always on");
-        },
-        DayStrategyConfig::Smart(cfg) => todo!(),
-        DayStrategyConfig::AlwaysOff(_) => todo!(),
+impl ConfigFile {
+    pub fn decode_config(filename: &str) -> eyre::Result<ConfigFile> {
+        let conf = std::fs::read_to_string(filename)?;
+        let config_file = toml::from_str::<ConfigFile>(&conf).unwrap();
+        Ok(config_file)
     }
-    Ok(())
+
+    pub fn get_day(&self, weekday: &Weekday) -> &Day {
+        match weekday {
+            Weekday::Mon => &self.monday,
+            Weekday::Tue => &self.tuesday,
+            Weekday::Wed => &self.wednesday,
+            Weekday::Thu => &self.thursday,
+            Weekday::Fri => &self.friday,
+            Weekday::Sat => &self.saturday,
+            Weekday::Sun => &self.sunday,
+        }
+    }
 }

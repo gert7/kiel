@@ -10,25 +10,18 @@ pub struct PriceLimitStrategy {
     limit_mwh: Decimal,
 }
 
-impl PriceLimitStrategy {
-    pub fn new(limit: PricePerMwh) -> Self {
-        PriceLimitStrategy { limit_mwh: limit.0 }
-    }
-}
-
 impl MaskablePowerStrategy for PriceLimitStrategy {
-    fn plan_day_masked<'a>(
-        &self,
-        mask: &'a Vec<PriceChangeUnit>,
-    ) -> Vec<PriceChangeUnit<'a>> {
-        mask
-            .iter()
+    fn plan_day_masked<'a>(&self, mask: &'a Vec<PriceChangeUnit>) -> Vec<PriceChangeUnit<'a>> {
+        mask.iter()
             .map(|pcu| {
                 if pcu.price.price.0 > self.limit_mwh {
-                    PriceChangeUnit { price: pcu.price, change: PlannedChange {
-                        moment: pcu.price.moment,
-                        state: PowerState::Off,
-                    }}
+                    PriceChangeUnit {
+                        price: pcu.price,
+                        change: PlannedChange {
+                            moment: pcu.price.moment,
+                            state: PowerState::Off,
+                        },
+                    }
                 } else {
                     *pcu
                 }
@@ -42,7 +35,10 @@ mod test {
     use rust_decimal::Decimal;
     use rust_decimal_macros::dec;
 
-    use crate::{sample_data::sample_day_specified, strategy::{default::DefaultStrategy, PowerStrategy}};
+    use crate::{
+        sample_data::sample_day_specified,
+        strategy::{default::TariffStrategy, PowerStrategy},
+    };
 
     use super::*;
     const SAMPLE_DAY_PRICES: [Decimal; 8] = [
@@ -59,9 +55,11 @@ mod test {
     #[test]
     fn hits_limit() {
         let sample_day = sample_day_specified(&SAMPLE_DAY_PRICES, 0);
-        let base = DefaultStrategy.plan_day(&sample_day);
-        let result =
-            PriceLimitStrategy::new(PricePerMwh(dec!(150.0))).plan_day_masked(&base);
+        let base = TariffStrategy.plan_day(&sample_day);
+        let strategy = PriceLimitStrategy {
+            limit_mwh: dec!(150.0),
+        };
+        let result = strategy.plan_day_masked(&base);
         assert!(result[0].change.state == PowerState::On);
         assert!(result[1].change.state == PowerState::On);
         assert!(result[2].change.state == PowerState::On);

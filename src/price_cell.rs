@@ -1,5 +1,7 @@
+use crate::schema::price_cells;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
+use diesel::{prelude::*, Connection, PgConnection};
 use rust_decimal::Decimal;
 
 use crate::{
@@ -43,10 +45,16 @@ impl PriceCell {
         self.tariff_price = Some(tariff_value.into());
     }
 
-    fn total(&self) -> PricePerMwh {
+    pub fn total(&self) -> PricePerMwh {
         let mut price = self.price.0;
         self.tariff_price.as_ref().map(|tariff| price += tariff.0);
         PricePerMwh(price)
+    }
+
+    pub fn get_prices_from_db<C: Connection>(connection: &C) {
+        use self::price_cells::dsl::*;
+        let utc = Utc::now();
+        price_cells.filter(moment_utc.eq(&utc));
     }
 }
 
@@ -75,8 +83,6 @@ impl From<PriceCellDB> for PriceCell {
     }
 }
 
-use super::schema::price_cells;
-
 #[derive(Insertable)]
 #[table_name = "price_cells"]
 pub struct NewPriceCellDB<'a> {
@@ -86,7 +92,7 @@ pub struct NewPriceCellDB<'a> {
     pub market_hour: i16,
 }
 
-impl <'a> NewPriceCellDB<'a> {
+impl<'a> NewPriceCellDB<'a> {
     fn new(pc: &'a PriceCell) -> Self {
         let tariff_mwh = pc.tariff_price.as_ref().map(|ppm| &ppm.0);
         NewPriceCellDB {
