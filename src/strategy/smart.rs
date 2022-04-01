@@ -1,21 +1,22 @@
+use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use serde::Deserialize;
 
 use crate::price_matrix::{DaySlice, PricePerMwh};
 
 use super::{PlannedChange, PowerStrategy};
 
+#[derive(Deserialize)]
 pub struct SmartStrategy {
-    hard_limit: PricePerMwh,
+    hard_limit_mwh: Decimal,
     hour_budget: u32,
-    excl_sunday: bool,
 }
 
 impl SmartStrategy {
-    pub fn new(excl_sunday: bool) -> SmartStrategy {
+    pub fn new() -> SmartStrategy {
         SmartStrategy {
-            hard_limit: PricePerMwh(dec!(180.0)),
+            hard_limit_mwh: dec!(180.0),
             hour_budget: 9,
-            excl_sunday,
         }
     }
 }

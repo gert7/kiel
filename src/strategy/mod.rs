@@ -5,12 +5,10 @@ use crate::{
     price_matrix::{DaySlice},
 };
 
-use self::{always::{AlwaysOnStrategy, AlwaysOffStrategy}, default::DefaultStrategy, smart::SmartStrategy};
-
-mod always;
-mod default;
-mod limit;
-mod smart;
+pub mod always;
+pub mod default;
+pub mod limit;
+pub mod smart;
 
 // pub use default::{DefaultStrategy, DefaultStrategyExclSunday};
 

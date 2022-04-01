@@ -1,0 +1,25 @@
+# configuration
+
+[monday]
+
+
+[monday.config]
+type = "Smart"
+hard_limit_mwh = 180.21
+hour_budget = 9
+
+[tuesday]
+
+[tuesday.config]
+type = "AlwaysOn"
+
+[wednesday]
+
+[thursday]
+
+[friday]
+
+[saturday]
+hours_always_on = [12, 13, 14, 15]
+
+[sunday]

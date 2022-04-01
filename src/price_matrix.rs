@@ -1,6 +1,7 @@
 use chrono::{Date, DateTime, Duration};
 use chrono_tz::Tz;
 use rust_decimal::Decimal;
+use serde::Deserialize;
 
 use crate::price_cell::PriceCell;
 

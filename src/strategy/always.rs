@@ -1,10 +1,12 @@
 use chrono::DateTime;
 use chrono_tz::Tz;
+use serde::Deserialize;
 
 use crate::price_matrix::DaySlice;
 
 use super::{HourStrategy, PlannedChange, PowerState, PowerStrategy};
 
+#[derive(Deserialize)]
 pub struct AlwaysOnStrategy;
 
 impl HourStrategy for AlwaysOnStrategy {
@@ -24,6 +26,7 @@ impl PowerStrategy for AlwaysOnStrategy {
     }
 }
 
+#[derive(Deserialize)]
 pub struct AlwaysOffStrategy;
 
 impl HourStrategy for AlwaysOffStrategy {

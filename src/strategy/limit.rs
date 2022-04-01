@@ -1,14 +1,18 @@
+use rust_decimal::Decimal;
+use serde::Deserialize;
+
 use crate::price_matrix::{DaySlice, PricePerMwh};
 
 use super::{HourStrategy, MaskablePowerStrategy, PlannedChange, PowerState};
 
+#[derive(Deserialize)]
 pub struct PriceLimitStrategy {
-    limit: PricePerMwh,
+    limit_mwh: Decimal,
 }
 
 impl PriceLimitStrategy {
     pub fn new(limit: PricePerMwh) -> Self {
-        PriceLimitStrategy { limit }
+        PriceLimitStrategy { limit_mwh: limit.0 }
     }
 }
 
@@ -21,7 +25,7 @@ impl MaskablePowerStrategy for PriceLimitStrategy {
         day_prices
             .iter()
             .map(|price| {
-                if price.price > self.limit {
+                if price.price.0 > self.limit_mwh {
                     PlannedChange {
                         moment: price.moment,
                         state: PowerState::Off,

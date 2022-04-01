@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate diesel;
 mod bar_chart;
+mod config_file;
 mod constants;
 mod database;
 mod nord_pool_spot;
@@ -19,7 +20,10 @@ use chrono_tz::{
     America::Sao_Paulo,
     Europe::{Berlin, Tallinn},
 };
-use diesel::prelude::*;
+use color_eyre::eyre;
+use color_eyre::eyre::eyre;
+use constants::{MARKET_TZ, LOCAL_TZ};
+use diesel::{prelude::*, expression::subselect::ValidSubselect};
 
 use proc_mutex::wait_for_file;
 use rust_decimal::Decimal;
@@ -27,7 +31,7 @@ use rust_decimal_macros::dec;
 
 use crate::{
     price_cell::{NewPriceCellDB, PriceCell, PriceCellDB},
-    price_matrix::CentsPerKwh,
+    price_matrix::CentsPerKwh, config_file::decode_config,
 };
 
 const SAMPLE_DAY_PRICES: [Decimal; 8] = [
@@ -41,7 +45,7 @@ const SAMPLE_DAY_PRICES: [Decimal; 8] = [
     dec!(33.39),
 ];
 
-async fn fetch_main() -> color_eyre::Result<()> {
+async fn fetch_main() -> eyre::Result<()> {
     use schema::price_cells;
 
     let connection = database::establish_connection();
@@ -84,7 +88,16 @@ async fn fetch_main() -> color_eyre::Result<()> {
     Ok(())
 }
 
-async fn hour_main() -> color_eyre::Result<()> {
+async fn planner_main() -> eyre::Result<()> {
+    use toml::Value;
+
+    let today = Utc::now().with_timezone(&LOCAL_TZ).date();
+    let tomorrow = today + chrono::Duration::days(1);
+    decode_config()?;
+    Ok(())
+}
+
+async fn hour_main() -> eyre::Result<()> {
     use schema::price_cells;
     let connection = database::establish_connection();
 
@@ -129,7 +142,6 @@ async fn hour_main() -> color_eyre::Result<()> {
 #[doc(hidden)]
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
-    println!("mysteri");
 
     let mut lockfile = wait_for_file();
 
@@ -146,7 +158,8 @@ async fn main() -> color_eyre::Result<()> {
     };
 
     if second == "--fetch" {
-        fetch_main().await?;
+        // fetch_main().await?;
+        planner_main().await?;
     } else if second == "--hour" {
         hour_main().await?;
     } else {
