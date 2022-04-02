@@ -4,18 +4,18 @@ use serde::Deserialize;
 
 use crate::price_matrix::{DaySlice, PricePerMwh};
 
-use super::{PlannedChange, PowerStrategy, PriceChangeUnit};
+use super::{PlannedChange, PriceChangeUnit, MaskablePowerStrategy};
 
-#[derive(Deserialize)]
+#[derive(Clone, Copy, Deserialize)]
 pub struct SmartStrategy {
     hour_budget: u32,
 }
 
-impl PowerStrategy for SmartStrategy {
-    fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>> {
+impl MaskablePowerStrategy for SmartStrategy {
+    fn plan_day_masked<'a>(&self, changes: &'a Vec<PriceChangeUnit>) -> Vec<PriceChangeUnit<'a>> {
         let mut remaining_hours = self.hour_budget;
 
-        for hour in day_prices {}
+        for hour in changes {}
         vec![] // TODO: remove
     }
 }

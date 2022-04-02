@@ -23,8 +23,8 @@ use chrono_tz::{
 use color_eyre::eyre;
 use color_eyre::eyre::eyre;
 use config_file::ConfigFile;
-use constants::{MARKET_TZ, LOCAL_TZ};
-use diesel::{prelude::*, expression::subselect::ValidSubselect};
+use constants::{MARKET_TZ, LOCAL_TZ, PLANNING_TZ};
+use diesel::prelude::*;
 
 use proc_mutex::wait_for_file;
 use rust_decimal::Decimal;
@@ -32,7 +32,7 @@ use rust_decimal_macros::dec;
 
 use crate::{
     price_cell::{NewPriceCellDB, PriceCell, PriceCellDB},
-    price_matrix::CentsPerKwh,
+    price_matrix::CentsPerKwh, strategy::default::TariffStrategy, config_file::DayBasePlan,
 };
 
 const SAMPLE_DAY_PRICES: [Decimal; 8] = [
@@ -47,11 +47,7 @@ const SAMPLE_DAY_PRICES: [Decimal; 8] = [
 ];
 
 async fn fetch_main() -> eyre::Result<()> {
-    use schema::price_cells;
-
     let connection = database::establish_connection();
-
-    // diesel::delete(price_cells::table).execute(&connection)?;
 
     let date_matrix = nord_pool_spot::fetch_prices_from_nord_pool().await?;
     let date_matrix = date_matrix
@@ -60,29 +56,8 @@ async fn fetch_main() -> eyre::Result<()> {
         .map(|o| o.as_ref().unwrap());
 
     for date in date_matrix {
-        for price in &date.cells {
-            let utc = price.moment.with_timezone(&Utc);
-            let count = price_cells::table
-                .filter(price_cells::moment_utc.eq(&utc))
-                .limit(5)
-                .count()
-                .get_result::<i64>(&connection)
-                .expect("Unable to count in price_cells table!");
-
-            if count == 0 {
-                let tariff = price.tariff_price.as_ref().map(|o| &o.0);
-                let new_price = NewPriceCellDB {
-                    price_mwh: &price.price.0,
-                    moment_utc: price.moment.with_timezone(&Utc),
-                    tariff_mwh: tariff,
-                    market_hour: price.market_hour.try_into().unwrap(),
-                };
-
-                let pcdb: PriceCellDB = diesel::insert_into(price_cells::table)
-                    .values(&new_price)
-                    .get_result(&connection)
-                    .expect("Failed to insert price.");
-            }
+        for price in &date.cells.0 {
+            price.insert_cell_into_database(&connection);
         }
     }
 
@@ -90,10 +65,28 @@ async fn fetch_main() -> eyre::Result<()> {
 }
 
 async fn planner_main() -> eyre::Result<()> {
-    let today = Utc::now().with_timezone(&LOCAL_TZ).date();
-    let day_name = today.weekday();
+    let default_base = TariffStrategy;
     let config = ConfigFile::decode_config("asdf.toml")?;
-    let config_today = config.get_day(&day_name);
+    let connection = database::establish_connection();
+
+    let today = Utc::now().with_timezone(&PLANNING_TZ).date();
+    let today = today - chrono::Duration::days(2);
+    let config_today = config.get_day(&today.weekday());
+
+    let pdb = PriceCell::get_prices_from_db(&connection, &today);
+
+    let base = config_today.base.unwrap_or(DayBasePlan::Tariff(default_base));
+    let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &today);
+    
+    let strategy_result = match config_today.strategy {
+        Some(strategy) => strategy.get_day_strategy().plan_day_masked(&base_prices),
+        None => base_prices,
+    };
+
+    for pcu in strategy_result {
+        println!("{:?}", pcu);
+    }
+
     Ok(())
 }
 
@@ -158,10 +151,10 @@ async fn main() -> color_eyre::Result<()> {
     };
 
     if second == "--fetch" {
-        // fetch_main().await?;
-        planner_main().await?;
+        fetch_main().await?;
     } else if second == "--hour" {
-        hour_main().await?;
+        // hour_main().await?;
+        planner_main().await?;
     } else {
         eprintln!("Unknown mode: {}", second);
     }

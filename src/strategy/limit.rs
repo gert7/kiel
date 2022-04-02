@@ -5,7 +5,7 @@ use crate::price_matrix::{DaySlice, PricePerMwh};
 
 use super::{HourStrategy, MaskablePowerStrategy, PlannedChange, PowerState, PriceChangeUnit};
 
-#[derive(Deserialize)]
+#[derive(Clone, Copy, Deserialize)]
 pub struct PriceLimitStrategy {
     limit_mwh: Decimal,
 }
@@ -13,18 +13,19 @@ pub struct PriceLimitStrategy {
 impl MaskablePowerStrategy for PriceLimitStrategy {
     fn plan_day_masked<'a>(&self, mask: &'a Vec<PriceChangeUnit>) -> Vec<PriceChangeUnit<'a>> {
         mask.iter()
-            .map(|pcu| {
-                if pcu.price.price.0 > self.limit_mwh {
-                    PriceChangeUnit {
-                        price: pcu.price,
-                        change: PlannedChange {
-                            moment: pcu.price.moment,
+            .map(|pcu| match pcu.price {
+                Some(price) => {
+                    if price.price.0 > self.limit_mwh {
+                        PriceChangeUnit {
+                            moment: price.moment,
+                            price: pcu.price,
                             state: PowerState::Off,
-                        },
+                        }
+                    } else {
+                        *pcu
                     }
-                } else {
-                    *pcu
                 }
+                None => *pcu,
             })
             .collect()
     }
@@ -37,7 +38,7 @@ mod test {
 
     use crate::{
         sample_data::sample_day_specified,
-        strategy::{default::TariffStrategy, PowerStrategy},
+        strategy::{default::TariffStrategy},
     };
 
     use super::*;
@@ -60,13 +61,13 @@ mod test {
             limit_mwh: dec!(150.0),
         };
         let result = strategy.plan_day_masked(&base);
-        assert!(result[0].change.state == PowerState::On);
-        assert!(result[1].change.state == PowerState::On);
-        assert!(result[2].change.state == PowerState::On);
-        assert!(result[3].change.state == PowerState::Off);
-        assert!(result[4].change.state == PowerState::On);
-        assert!(result[5].change.state == PowerState::Off);
-        assert!(result[6].change.state == PowerState::Off);
-        assert!(result[7].change.state == PowerState::Off);
+        assert!(result[0].state == PowerState::On);
+        assert!(result[1].state == PowerState::On);
+        assert!(result[2].state == PowerState::On);
+        assert!(result[3].state == PowerState::Off);
+        assert!(result[4].state == PowerState::On);
+        assert!(result[5].state == PowerState::Off);
+        assert!(result[6].state == PowerState::Off);
+        assert!(result[7].state == PowerState::Off);
     }
 }

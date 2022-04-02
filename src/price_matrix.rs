@@ -38,12 +38,13 @@ impl From<&CentsPerKwh> for PricePerMwh {
 #[derive(Clone, Debug)]
 pub struct DateColumn {
     pub date: Date<Tz>,
-    pub cells: Vec<PriceCell>,
+    pub cells: DaySlice,
 }
 
 pub type PriceMatrix = Vec<Option<DateColumn>>;
 
-pub type DaySlice = Vec<PriceCell>;
+#[derive(Clone, Debug)]
+pub struct DaySlice(pub Vec<PriceCell>);
 
 // #[derive(Clone, Debug)]
 // pub struct DayNightSlice {
@@ -58,11 +59,11 @@ pub fn add_almost_day(dt: &DateTime<Tz>) -> DateTime<Tz> {
     *dt + hours + minutes + seconds
 }
 
-pub fn truncate_to_24_hours(day_prices: &Vec<PriceCell>) -> Vec<PriceCell> {
-    let mut sorted_prices = day_prices.clone();
+pub fn truncate_to_24_hours(day_prices: &DaySlice) -> DaySlice {
+    let mut sorted_prices = day_prices.0.clone();
     sorted_prices.sort_by(|a, b| a.moment.cmp(&b.moment));
     let first = sorted_prices.first();
-    match first {
+    let vec = match first {
         Some(init) => {
             let day_cycle = add_almost_day(&init.moment);
             let filtered_prices = sorted_prices
@@ -71,7 +72,8 @@ pub fn truncate_to_24_hours(day_prices: &Vec<PriceCell>) -> Vec<PriceCell> {
             filtered_prices.collect()
         }
         None => sorted_prices,
-    }
+    };
+    DaySlice(vec)
 }
 
 #[cfg(test)]
@@ -108,8 +110,8 @@ mod tests {
     fn truncates_properly() {
         let date1 = MARKET_TZ.ymd(2022, 3, 3);
         let sample_day = sample_day(&date1, 16, 30, &mut thread_rng());
-        assert!(sample_day.len() == 30);
+        assert!(sample_day.0.len() == 30);
         let truncated = truncate_to_24_hours(&sample_day);
-        assert!(truncated.len() == 24);
+        assert!(truncated.0.len() == 24);
     }
 }

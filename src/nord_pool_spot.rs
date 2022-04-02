@@ -5,6 +5,7 @@ use chrono_tz::Tz;
 use color_eyre::{
     eyre::{self, eyre},
 };
+use diesel::Connection;
 use rust_decimal::Decimal;
 use thirtyfour::{
     prelude::ElementQueryable,
@@ -13,7 +14,7 @@ use thirtyfour::{
 
 use crate::{
     constants::MARKET_TZ,
-    price_matrix::{DateColumn, PriceMatrix, PricePerMwh}, price_cell::PriceCell,
+    price_matrix::{DateColumn, PriceMatrix, PricePerMwh, DaySlice}, price_cell::PriceCell,
 };
 
 fn convert_price_to_decimal(string: &str) -> eyre::Result<Decimal> {
@@ -108,7 +109,7 @@ async fn row_iteration<'a>(
                 let dateline = &dates[date_i];
                 let moment = retrieve_datetime(dateline, hour, &MARKET_TZ)?;
                 match convert_price_to_decimal(&intext) {
-                    Ok(dec_price) => column.cells.push(PriceCell {
+                    Ok(dec_price) => column.cells.0.push(PriceCell {
                         price: PricePerMwh(dec_price),
                         moment: moment,
                         tariff_price: Some(PriceCell::get_tariff_price_current(moment)),
@@ -138,7 +139,7 @@ async fn retrieve_prices(driver: &WebDriver) -> eyre::Result<PriceMatrix> {
         match parse_date(&dates[i], &MARKET_TZ) {
             Ok(date) => date_vectors.push(Some(DateColumn {
                 date,
-                cells: vec![],
+                cells: DaySlice(vec![]),
             })),
             Err(_) => date_vectors.push(None),
         }

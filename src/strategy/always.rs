@@ -4,57 +4,43 @@ use serde::Deserialize;
 
 use crate::{price_cell::PriceCell, price_matrix::DaySlice};
 
-use super::{HourStrategy, PlannedChange, PowerState, PowerStrategy, PriceChangeUnit};
+use super::{HourStrategy, PlannedChange, PowerState, PriceChangeUnit};
 
-#[derive(Deserialize)]
+#[derive(Clone, Copy, Deserialize)]
 pub struct AlwaysOnStrategy;
 
 impl HourStrategy for AlwaysOnStrategy {
-    fn plan_hour(&self, datetime: &DateTime<Tz>) -> PlannedChange {
-        PlannedChange {
-            moment: *datetime,
-            state: PowerState::On,
-        }
+    fn plan_hour(&self, datetime: &DateTime<Tz>) -> PowerState {
+        PowerState::On
     }
-}
-
-impl PowerStrategy for AlwaysOnStrategy {
     fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>> {
         day_prices
+            .0
             .iter()
             .map(|price| PriceChangeUnit {
-                price,
-                change: PlannedChange {
-                    moment: price.moment,
-                    state: PowerState::On,
-                },
+                price: Some(price),
+                state: PowerState::On,
+                moment: price.moment,
             })
             .collect()
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Copy, Deserialize)]
 pub struct AlwaysOffStrategy;
 
 impl HourStrategy for AlwaysOffStrategy {
-    fn plan_hour(&self, datetime: &DateTime<Tz>) -> PlannedChange {
-        PlannedChange {
-            moment: *datetime,
-            state: PowerState::Off,
-        }
+    fn plan_hour(&self, datetime: &DateTime<Tz>) -> PowerState {
+        PowerState::Off
     }
-}
-
-impl PowerStrategy for AlwaysOffStrategy {
     fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>> {
         day_prices
+            .0
             .iter()
             .map(|price| PriceChangeUnit {
-                price,
-                change: PlannedChange {
-                    moment: price.moment,
-                    state: PowerState::Off,
-                },
+                price: Some(price),
+                state: PowerState::Off,
+                moment: price.moment,
             })
             .collect()
     }

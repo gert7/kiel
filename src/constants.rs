@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use chrono_tz::{Europe::{Berlin, Tallinn}, Tz};
 use lazy_static::lazy_static;
 use rust_decimal_macros::dec;
@@ -7,6 +9,10 @@ use crate::price_matrix::CentsPerKwh;
 pub const MARKET_TZ: Tz = Berlin;
 
 pub const LOCAL_TZ: Tz = Tallinn;
+
+pub const PLANNING_TZ: Tz = MARKET_TZ;
+
+pub const HOURS_OF_DAY: Range<u32> = Range { start: 0, end: 24 };
 
 lazy_static! {
 

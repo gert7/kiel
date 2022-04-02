@@ -1,16 +1,17 @@
-use chrono::Weekday;
+use chrono::{Weekday, DateTime, Utc};
+use chrono_tz::Tz;
 use color_eyre::eyre::{self, eyre};
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
-use crate::strategy::{
+use crate::{strategy::{
     always::{AlwaysOffStrategy, AlwaysOnStrategy},
     default::TariffStrategy,
     limit::PriceLimitStrategy,
-    smart::SmartStrategy,
-};
+    smart::SmartStrategy, HourStrategy, MaskablePowerStrategy, PlannedChange, PriceChangeUnit, PowerState,
+}, price_cell::PriceCell, price_matrix::DaySlice};
 
-#[derive(Deserialize)]
+#[derive(Clone, Copy, Deserialize)]
 #[serde(tag = "mode")]
 pub enum DayBasePlan {
     AlwaysOff(AlwaysOffStrategy),
@@ -18,11 +19,30 @@ pub enum DayBasePlan {
     Tariff(TariffStrategy),
 }
 
-#[derive(Deserialize)]
+impl DayBasePlan {
+    pub fn get_hour_strategy(self) -> Box<dyn HourStrategy> {
+        match self {
+            DayBasePlan::AlwaysOff(v) => Box::new(v),
+            DayBasePlan::AlwaysOn(v) => Box::new(v),
+            DayBasePlan::Tariff(v) => Box::new(v),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Deserialize)]
 #[serde(tag = "mode")]
 pub enum DayStrategy {
     Limit(PriceLimitStrategy),
     Smart(SmartStrategy),
+}
+
+impl DayStrategy {
+    pub fn get_day_strategy(self) -> Box<dyn MaskablePowerStrategy> {
+        match self {
+            DayStrategy::Limit(v) => Box::new(v),
+            DayStrategy::Smart(v) => Box::new(v),
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -62,4 +82,12 @@ impl ConfigFile {
             Weekday::Sun => &self.sunday,
         }
     }
+}
+
+#[derive(Queryable)]
+pub struct ConfigFileDB {
+    id: i32,
+    toml: String,
+    known_broken: bool,
+    created_at: DateTime<Utc>
 }

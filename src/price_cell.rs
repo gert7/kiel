@@ -1,7 +1,7 @@
-use crate::schema::price_cells;
-use chrono::{DateTime, Utc};
+use crate::{price_matrix::DaySlice, schema::price_cells};
+use chrono::{Date, DateTime, Utc};
 use chrono_tz::Tz;
-use diesel::{prelude::*, Connection, PgConnection};
+use diesel::{connection, prelude::*, Connection, PgConnection};
 use rust_decimal::Decimal;
 
 use crate::{
@@ -51,10 +51,53 @@ impl PriceCell {
         PricePerMwh(price)
     }
 
-    pub fn get_prices_from_db<C: Connection>(connection: &C) {
+    /// Fetches all prices on the given date in its
+    /// given timezone.
+    pub fn get_prices_from_db(connection: &PgConnection, date: &Date<Tz>) -> DaySlice {
         use self::price_cells::dsl::*;
-        let utc = Utc::now();
-        price_cells.filter(moment_utc.eq(&utc));
+
+        let midnight_start = date.and_hms(0, 0, 0);
+        let midnight_end = date.and_hms(23, 59, 59);
+        let cells = price_cells
+            .filter(moment_utc.ge(&midnight_start))
+            .filter(moment_utc.lt(&midnight_end))
+            .load::<PriceCellDB>(connection)
+            .expect("Unable to load price cells");
+        let cells = cells.into_iter().map(|pcdb| pcdb.into()).collect();
+        DaySlice(cells)
+    }
+
+    pub fn insert_cell_into_database(&self, connection: &PgConnection) {
+        use self::price_cells::dsl::*;
+
+        let utc = self.moment.with_timezone(&Utc);
+        let count = price_cells
+            .filter(moment_utc.eq(&utc))
+            .limit(5)
+            .count()
+            .get_result::<i64>(connection)
+            .expect("Unable to count in price_cells table!");
+
+        if count == 0 {
+            let tariff = self.tariff_price.as_ref().map(|o| &o.0);
+            let new_price = NewPriceCellDB {
+                price_mwh: &self.price.0,
+                moment_utc: self.moment.with_timezone(&Utc),
+                tariff_mwh: tariff,
+                market_hour: self.market_hour.try_into().unwrap(),
+            };
+
+            let pcdb: PriceCellDB = diesel::insert_into(price_cells)
+                .values(&new_price)
+                .get_result::<PriceCellDB>(connection)
+                .expect("Failed to insert price.");
+        }
+    }
+
+    pub fn insert_cells_into_database(connection: &PgConnection, prices: &Vec<PriceCell>) {
+        for price in prices {
+            price.insert_cell_into_database(connection);
+        }
     }
 }
 
@@ -69,6 +112,7 @@ pub struct PriceCellDB {
     moment: DateTime<Utc>,
     tariff: Option<Decimal>,
     market_hour: i16,
+    created_at: DateTime<Utc>
 }
 
 impl From<PriceCellDB> for PriceCell {

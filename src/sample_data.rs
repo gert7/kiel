@@ -28,7 +28,7 @@ where
         };
         vec.push(hour);
     }
-    vec
+    DaySlice(vec)
 }
 
 pub fn sample_day_specified(prices: &'static [Decimal], start_hour: u32) -> DaySlice {
@@ -39,7 +39,7 @@ pub fn sample_day_specified(prices: &'static [Decimal], start_hour: u32) -> DayS
         let moment = start_dt + Duration::hours(offset.into());
         vec.push(PriceCell { price: PricePerMwh(*price), moment, tariff_price: None, market_hour: start_hour + offset });
     }
-    vec
+    DaySlice(vec)
 }
 
 #[cfg(test)]
