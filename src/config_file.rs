@@ -1,9 +1,7 @@
 use chrono::{DateTime, Utc, Weekday};
-use chrono_tz::Tz;
 use color_eyre::eyre::{self, eyre};
 use diesel::{prelude::*, update, PgConnection};
 use serde::{Deserialize, Serialize};
-use toml::Value;
 
 use crate::{
     constants::DEFAULT_CONFIG_FILENAME,

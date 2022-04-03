@@ -15,7 +15,7 @@ mod tariff;
 
 use std::{env, fs::File, io::Write, time::Duration};
 
-use chrono::{Date, Local, TimeZone, Utc, Datelike};
+use chrono::{Date, Datelike, Local, TimeZone, Utc};
 use chrono_tz::{
     America::Sao_Paulo,
     Europe::{Berlin, Tallinn},
@@ -23,7 +23,7 @@ use chrono_tz::{
 use color_eyre::eyre;
 use color_eyre::eyre::eyre;
 use config_file::ConfigFile;
-use constants::{MARKET_TZ, LOCAL_TZ, PLANNING_TZ, DEFAULT_CONFIG_FILENAME};
+use constants::{DEFAULT_CONFIG_FILENAME, LOCAL_TZ, MARKET_TZ, PLANNING_TZ};
 use diesel::prelude::*;
 
 use proc_mutex::wait_for_file;
@@ -31,8 +31,10 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
 use crate::{
+    config_file::DayBasePlan,
     price_cell::{NewPriceCellDB, PriceCell, PriceCellDB},
-    price_matrix::CentsPerKwh, strategy::default::TariffStrategy, config_file::DayBasePlan,
+    price_matrix::CentsPerKwh,
+    strategy::default::TariffStrategy,
 };
 
 const SAMPLE_DAY_PRICES: [Decimal; 8] = [
@@ -66,8 +68,9 @@ async fn fetch_main() -> eyre::Result<()> {
 
 async fn planner_main() -> eyre::Result<()> {
     let default_base = TariffStrategy;
-    let config = ConfigFile::decode_file(&DEFAULT_CONFIG_FILENAME)?;
     let connection = database::establish_connection();
+    let config = ConfigFile::fetch_from_database(&connection, DEFAULT_CONFIG_FILENAME)
+        .expect("No configuration file found anywhere!");
 
     let today = Utc::now().with_timezone(&PLANNING_TZ).date();
     let today = today - chrono::Duration::days(2);
@@ -75,9 +78,11 @@ async fn planner_main() -> eyre::Result<()> {
 
     let pdb = PriceCell::get_prices_from_db(&connection, &today);
 
-    let base = config_today.base.unwrap_or(DayBasePlan::Tariff(default_base));
+    let base = config_today
+        .base
+        .unwrap_or(DayBasePlan::Tariff(default_base));
     let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &today);
-    
+
     let strategy_result = match config_today.strategy {
         Some(strategy) => strategy.get_day_strategy().plan_day_masked(&base_prices),
         None => base_prices,

@@ -1,20 +1,17 @@
-use std::{num::ParseIntError, str::FromStr, time::Duration};
+use std::{env, num::ParseIntError, str::FromStr, time::Duration};
 
 use chrono::{Date, DateTime, TimeZone};
 use chrono_tz::Tz;
-use color_eyre::{
-    eyre::{self, eyre},
-};
+use color_eyre::eyre::{self, eyre};
 use diesel::Connection;
+use dotenv::dotenv;
 use rust_decimal::Decimal;
-use thirtyfour::{
-    prelude::ElementQueryable,
-    By, DesiredCapabilities, WebDriver, WebElement,
-};
+use thirtyfour::{prelude::ElementQueryable, By, DesiredCapabilities, WebDriver, WebElement};
 
 use crate::{
     constants::MARKET_TZ,
-    price_matrix::{DateColumn, PriceMatrix, PricePerMwh, DaySlice}, price_cell::PriceCell,
+    price_cell::PriceCell,
+    price_matrix::{DateColumn, DaySlice, PriceMatrix, PricePerMwh},
 };
 
 fn convert_price_to_decimal(string: &str) -> eyre::Result<Decimal> {
@@ -156,15 +153,14 @@ async fn retrieve_prices(driver: &WebDriver) -> eyre::Result<PriceMatrix> {
 }
 
 pub async fn fetch_prices_from_nord_pool() -> eyre::Result<PriceMatrix> {
+    dotenv().ok();
     let mut caps = DesiredCapabilities::chrome();
     caps.add_chrome_arg("--enable-automation")?;
-    let driver = WebDriver::new("http://localhost:4444/wd/hub", &caps).await?;
+    let driver_uri = env::var("WEBDRIVER_URI").expect("No WebDriver URI set!");
+    let driver = WebDriver::new(&driver_uri, &caps).await?;
 
-    driver
-        .get(
-            "https://www.nordpoolgroup.com/Market-data1/Dayahead/Area-Prices/EE/Hourly/?view=table",
-        )
-        .await?;
+    let prices_url = env::var("DAYAHEAD_URL").expect("No dayahead site URL set!");
+    driver.get(&prices_url).await?;
 
     let date_vectors = retrieve_prices(&driver).await;
 
