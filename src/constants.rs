@@ -6,6 +6,8 @@ use rust_decimal_macros::dec;
 
 use crate::price_matrix::CentsPerKwh;
 
+pub const DEFAULT_CONFIG_FILENAME: &str = "default.toml";
+
 pub const MARKET_TZ: Tz = Berlin;
 
 pub const LOCAL_TZ: Tz = Tallinn;

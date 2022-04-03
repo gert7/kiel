@@ -23,7 +23,7 @@ use chrono_tz::{
 use color_eyre::eyre;
 use color_eyre::eyre::eyre;
 use config_file::ConfigFile;
-use constants::{MARKET_TZ, LOCAL_TZ, PLANNING_TZ};
+use constants::{MARKET_TZ, LOCAL_TZ, PLANNING_TZ, DEFAULT_CONFIG_FILENAME};
 use diesel::prelude::*;
 
 use proc_mutex::wait_for_file;
@@ -66,7 +66,7 @@ async fn fetch_main() -> eyre::Result<()> {
 
 async fn planner_main() -> eyre::Result<()> {
     let default_base = TariffStrategy;
-    let config = ConfigFile::decode_config("asdf.toml")?;
+    let config = ConfigFile::decode_file(&DEFAULT_CONFIG_FILENAME)?;
     let connection = database::establish_connection();
 
     let today = Utc::now().with_timezone(&PLANNING_TZ).date();

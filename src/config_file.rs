@@ -1,15 +1,21 @@
-use chrono::{Weekday, DateTime, Utc};
+use chrono::{DateTime, Utc, Weekday};
 use chrono_tz::Tz;
 use color_eyre::eyre::{self, eyre};
+use diesel::{prelude::*, update, PgConnection};
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
-use crate::{strategy::{
-    always::{AlwaysOffStrategy, AlwaysOnStrategy},
-    default::TariffStrategy,
-    limit::PriceLimitStrategy,
-    smart::SmartStrategy, HourStrategy, MaskablePowerStrategy, PlannedChange, PriceChangeUnit, PowerState,
-}, price_cell::PriceCell, price_matrix::DaySlice};
+use crate::{
+    constants::DEFAULT_CONFIG_FILENAME,
+    schema::day_configurations,
+    strategy::{
+        always::{AlwaysOffStrategy, AlwaysOnStrategy},
+        default::TariffStrategy,
+        limit::PriceLimitStrategy,
+        smart::SmartStrategy,
+        HourStrategy, MaskablePowerStrategy,
+    },
+};
 
 #[derive(Clone, Copy, Deserialize)]
 #[serde(tag = "mode")]
@@ -65,10 +71,15 @@ pub struct ConfigFile {
 }
 
 impl ConfigFile {
-    pub fn decode_config(filename: &str) -> eyre::Result<ConfigFile> {
-        let conf = std::fs::read_to_string(filename)?;
-        let config_file = toml::from_str::<ConfigFile>(&conf).unwrap();
+    pub fn decode_config(file: &str) -> eyre::Result<ConfigFile> {
+        println!("{}", file);
+        let config_file = toml::from_str::<ConfigFile>(file)?;
         Ok(config_file)
+    }
+
+    pub fn decode_file(filename: &str) -> eyre::Result<ConfigFile> {
+        let conf = std::fs::read_to_string(filename)?;
+        Ok(ConfigFile::decode_config(&conf)?)
     }
 
     pub fn get_day(&self, weekday: &Weekday) -> &Day {
@@ -82,6 +93,53 @@ impl ConfigFile {
             Weekday::Sun => &self.sunday,
         }
     }
+
+    fn config_attempt_loop(
+        connection: &PgConnection,
+        cfgs: &Vec<ConfigFileDB>,
+    ) -> eyre::Result<ConfigFile> {
+        use crate::schema::day_configurations::dsl::*;
+        for cfdb in cfgs {
+            let attempt = ConfigFile::decode_config(&cfdb.toml);
+            println!("attempt");
+            match attempt {
+                Ok(good) => return Ok(good),
+                Err(e) => {
+                    eprintln!("{}", e);
+                    let db_result = update(day_configurations.filter(id.eq(cfdb.id)))
+                        .set(known_broken.eq(true))
+                        .execute(connection);
+                    if let Err(e) = db_result {
+                        eprintln!("{}", e);
+                    };
+                }
+            }
+        }
+        Err(eyre!("No good config found"))
+    }
+
+    pub fn fetch_from_database(
+        connection: &PgConnection,
+        default_filename: &str,
+    ) -> eyre::Result<ConfigFile> {
+        use crate::schema::day_configurations::dsl::*;
+
+        let find = day_configurations
+            .filter(known_broken.eq(false))
+            .order(id.desc())
+            .limit(10)
+            .load::<ConfigFileDB>(connection)
+            .expect("Unable to load configuration file from database");
+        let good = ConfigFile::config_attempt_loop(&connection, &find);
+        let config_file = match good {
+            Ok(good) => good,
+            Err(e) => {
+                eprintln!("{}", e);
+                ConfigFile::decode_file(default_filename).expect("No default config file found!")
+            }
+        };
+        Ok(config_file)
+    }
 }
 
 #[derive(Queryable)]
@@ -89,5 +147,90 @@ pub struct ConfigFileDB {
     id: i32,
     toml: String,
     known_broken: bool,
-    created_at: DateTime<Utc>
+    created_at: DateTime<Utc>,
+}
+
+#[derive(Insertable)]
+#[table_name = "day_configurations"]
+struct NewConfigFileDB<'a> {
+    toml: &'a str,
+    known_broken: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use core::num;
+
+    use crate::database;
+
+    use super::*;
+    use crate::schema::day_configurations::dsl::*;
+    use diesel::prelude::*;
+
+    fn clear_table(connection: &PgConnection) {
+        diesel::delete(day_configurations).execute(connection).ok();
+    }
+
+    fn insert_good_cfg(connection: &PgConnection) -> ConfigFileDB {
+        let good_toml = std::fs::read_to_string("samples/default.toml").unwrap();
+        let new_cfg = NewConfigFileDB {
+            toml: &good_toml,
+            known_broken: false,
+        };
+        diesel::insert_into(day_configurations)
+            .values(new_cfg)
+            .get_result(connection).expect("Unable to insert!")
+    }
+
+    const BAD_TOML: &str = "jwraiojfoad";
+
+    fn insert_bad_cfg(connection: &PgConnection, known_broken_val: bool) -> ConfigFileDB {
+        let new_cfg = NewConfigFileDB {
+            toml: BAD_TOML,
+            known_broken: known_broken_val,
+        };
+        diesel::insert_into(day_configurations)
+            .values(new_cfg)
+            .get_result(connection).expect("Unable to insert!")
+    }
+
+    #[test]
+    fn loads_from_database() {
+        let connection = database::establish_connection();
+        clear_table(&connection);
+        insert_good_cfg(&connection);
+        let loaded = ConfigFile::fetch_from_database(&connection, &DEFAULT_CONFIG_FILENAME);
+        assert!(loaded.is_ok());
+    }
+
+    #[test]
+    fn loads_default_with_empty_database() {
+        let connection = database::establish_connection();
+        clear_table(&connection);
+        let loaded = ConfigFile::fetch_from_database(&connection, &DEFAULT_CONFIG_FILENAME);
+        assert!(loaded.is_ok());
+    }
+
+    #[test]
+    #[should_panic]
+    fn fails_with_wrong_default_config() {
+        let connection = database::establish_connection();
+        clear_table(&connection);
+        ConfigFile::fetch_from_database(&connection, "samples/fjafiowje.toml").ok();
+    }
+
+    #[test]
+    fn marks_broken_configs_correctly() {
+        let connection = database::establish_connection();
+        clear_table(&connection);
+        let db_good = insert_good_cfg(&connection);
+        let db_bad = insert_bad_cfg(&connection, false);
+        let good = ConfigFile::fetch_from_database(&connection, DEFAULT_CONFIG_FILENAME);
+        assert!(good.is_ok());
+
+        let db_good: ConfigFileDB = day_configurations.find(db_good.id).first(&connection).unwrap();
+        let db_bad: ConfigFileDB = day_configurations.find(db_bad.id).first(&connection).unwrap();
+        assert!(db_good.known_broken == false);
+        assert!(db_bad.known_broken == true);
+    }
 }

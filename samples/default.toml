@@ -1,0 +1,28 @@
+# configuration
+
+[monday]
+
+
+[monday.strategy]
+mode = "Limit"
+limit_mwh = 180.21
+hour_budget = 9
+
+[monday.base]
+mode = "AlwaysOn"
+
+[tuesday]
+
+[tuesday.base]
+mode = "AlwaysOn"
+
+[wednesday]
+
+[thursday]
+
+[friday]
+
+[saturday]
+hours_always_on = [12, 13, 14, 15]
+
+[sunday]
