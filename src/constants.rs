@@ -14,7 +14,7 @@ pub const LOCAL_TZ: Tz = Tallinn;
 
 pub const PLANNING_TZ: Tz = MARKET_TZ;
 
-pub const HOURS_OF_DAY: Range<u32> = Range { start: 0, end: 24 };
+pub const HOURS_OF_DAY: Range<u8> = Range { start: 0, end: 24 };
 
 lazy_static! {
 
@@ -23,3 +23,5 @@ lazy_static! {
     pub static ref NIGHT_TARIFF_PRICE: CentsPerKwh = CentsPerKwh(dec!(3.86));
 
 }
+
+pub const CVAR_CONFIG_FAILURE_COUNT: &str = "config_failures";

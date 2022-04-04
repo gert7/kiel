@@ -116,7 +116,7 @@ mod tests {
             let state = hour % 2;
             vec.push(NewPowerStateDB {
                 moment_utc: date
-                    .and_hms(hour.try_into().unwrap(), 0, 0)
+                    .and_hms(hour.into(), 0, 0)
                     .with_timezone(&Utc),
                 state: state.try_into().unwrap(),
                 configuration_id: Some(cfid),
@@ -126,7 +126,7 @@ mod tests {
     }
 
     fn insert_checkerboard(connection: &PgConnection, date: &Date<Tz>, cfid: i32) {
-        let samples = day_sample_checkerboard(date, 71);
+        let samples = day_sample_checkerboard(date, cfid);
         diesel::insert_into(power_states::table)
             .values(&samples)
             .execute(connection)
@@ -142,8 +142,8 @@ mod tests {
         insert_checkerboard(&connection, &day_date, 71);
         let day = PowerStateDB::get_day_from_database(&connection, &day_date, Some(71)).unwrap();
         for hour in HOURS_OF_DAY {
-            let expected: i32 = (hour % 2).try_into().unwrap();
-            let index: usize = hour.try_into().unwrap();
+            let expected: i32 = (hour % 2).into();
+            let index: usize = hour.into();
             let actual = PowerStateDB::state_to_num(day[index].state);
             assert!(expected == actual);
         }

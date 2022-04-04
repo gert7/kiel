@@ -39,6 +39,7 @@ pub trait HourStrategy {
     fn plan_day_full<'a>(&self, day_prices: &'a DaySlice, date: &Date<Tz>) -> Vec<PriceChangeUnit<'a>> {
         let mut vec = self.plan_day(day_prices);
         for hour in HOURS_OF_DAY {
+            let hour: u32 = hour.into();
             let existing = vec
                 .iter()
                 .find(|pcu| pcu.moment.with_timezone(&date.timezone()).hour() == hour);

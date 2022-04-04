@@ -4,7 +4,8 @@ use diesel::{prelude::*, update, PgConnection};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    constants::DEFAULT_CONFIG_FILENAME,
+    constants::{CVAR_CONFIG_FAILURE_COUNT, DEFAULT_CONFIG_FILENAME},
+    convars::{ConvarInt, NewConvarInt},
     schema::day_configurations,
     strategy::{
         always::{AlwaysOffStrategy, AlwaysOnStrategy},
@@ -100,21 +101,56 @@ impl ConfigFile {
         Ok(row.id)
     }
 
+    pub fn increment_failures(connection: &PgConnection) {
+        use crate::schema::convar_ints::dsl::*;
+
+        let failure_count = convar_ints
+            .filter(key.eq(CVAR_CONFIG_FAILURE_COUNT))
+            .order(id.desc())
+            .first::<ConvarInt>(connection);
+        let failure_count = failure_count.map_or(0, |fc| fc.value);
+        let failures = NewConvarInt {
+            key: CVAR_CONFIG_FAILURE_COUNT,
+            value: failure_count + 1,
+        };
+        diesel::insert_into(convar_ints)
+            .values(failures)
+            .execute(connection)
+            .ok();
+    }
+
+    pub fn reset_failures(connection: &PgConnection) {
+        use crate::schema::convar_ints::dsl::*;
+
+        let failures = NewConvarInt {
+            key: CVAR_CONFIG_FAILURE_COUNT,
+            value: 0,
+        };
+        diesel::insert_into(convar_ints)
+            .values(failures)
+            .execute(connection)
+            .ok();
+    }
+
     fn config_attempt_loop<'a>(
         connection: &PgConnection,
         cfgs: Vec<ConfigFileDB>,
     ) -> eyre::Result<(ConfigFileDB, ConfigFile)> {
         use crate::schema::day_configurations::dsl::*;
         for cfdb in cfgs {
-            let attempt = ConfigFile::decode_config(&cfdb.toml);
+            let attempt = Self::decode_config(&cfdb.toml);
             println!("attempt");
             match attempt {
-                Ok(good) => return Ok((cfdb, good)),
+                Ok(good) => {
+                    Self::reset_failures(connection);
+                    return Ok((cfdb, good))
+                },
                 Err(e) => {
                     eprintln!("{}", e);
                     let db_result = update(day_configurations.filter(id.eq(cfdb.id)))
                         .set(known_broken.eq(true))
                         .execute(connection);
+                    Self::increment_failures(connection);
                     if let Err(e) = db_result {
                         eprintln!("{}", e);
                     };

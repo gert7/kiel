@@ -12,6 +12,8 @@ mod sample_data;
 mod schema;
 mod strategy;
 mod tariff;
+mod integration_test;
+mod convars;
 
 use std::{env, fs::File, io::Write, time::Duration};
 

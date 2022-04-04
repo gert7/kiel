@@ -1,0 +1,8 @@
+-- Your SQL goes here
+
+CREATE TABLE convar_ints (
+    id SERIAL PRIMARY KEY,
+    key TEXT NOT NULL,
+    value INTEGER NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);

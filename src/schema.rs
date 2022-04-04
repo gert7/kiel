@@ -1,4 +1,22 @@
 table! {
+    convar_ints (id) {
+        id -> Int4,
+        key -> Text,
+        value -> Int4,
+        created_at -> Timestamptz,
+    }
+}
+
+table! {
+    convar_strings (id) {
+        id -> Int4,
+        key -> Text,
+        value -> Text,
+        created_at -> Timestamptz,
+    }
+}
+
+table! {
     day_configurations (id) {
         id -> Int4,
         toml -> Text,
@@ -37,6 +55,8 @@ table! {
 }
 
 allow_tables_to_appear_in_same_query!(
+    convar_ints,
+    convar_strings,
     day_configurations,
     power_states,
     price_cells,
