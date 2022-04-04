@@ -1,5 +1,7 @@
 use chrono::{Date, DateTime, Duration};
 use chrono_tz::Tz;
+use color_eyre::eyre;
+use diesel::PgConnection;
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
@@ -74,6 +76,23 @@ pub fn truncate_to_24_hours(day_prices: &DaySlice) -> DaySlice {
         None => sorted_prices,
     };
     DaySlice(vec)
+}
+
+pub fn insert_matrix_to_database(
+    connection: &PgConnection,
+    date_matrix: &PriceMatrix,
+) -> eyre::Result<()> {
+    let date_matrix = date_matrix
+        .iter()
+        .filter(|o| o.is_some())
+        .map(|o| o.as_ref().unwrap());
+
+    for date in date_matrix {
+        for price in &date.cells.0 {
+            price.insert_cell_into_database(&connection)?;
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]

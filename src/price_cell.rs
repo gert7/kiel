@@ -1,6 +1,7 @@
 use crate::{price_matrix::DaySlice, schema::price_cells};
 use chrono::{Date, DateTime, Utc};
 use chrono_tz::Tz;
+use color_eyre::eyre;
 use diesel::{connection, prelude::*, Connection, PgConnection};
 use rust_decimal::Decimal;
 
@@ -72,7 +73,7 @@ impl PriceCell {
         DaySlice(cells)
     }
 
-    pub fn insert_cell_into_database(&self, connection: &PgConnection) {
+    pub fn insert_cell_into_database(&self, connection: &PgConnection) -> eyre::Result<()> {
         use self::price_cells::dsl::*;
 
         let utc = self.moment.with_timezone(&Utc);
@@ -97,12 +98,15 @@ impl PriceCell {
                 .get_result::<PriceCellDB>(connection)
                 .expect("Failed to insert price.");
         }
+
+        Ok(())
     }
 
-    pub fn insert_cells_into_database(connection: &PgConnection, prices: &Vec<PriceCell>) {
+    pub fn insert_cells_into_database(connection: &PgConnection, prices: &Vec<PriceCell>) -> eyre::Result<()> {
         for price in prices {
-            price.insert_cell_into_database(connection);
+            price.insert_cell_into_database(connection)?;
         }
+        Ok(())
     }
 }
 

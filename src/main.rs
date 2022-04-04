@@ -54,16 +54,7 @@ async fn fetch_main() -> eyre::Result<()> {
     let connection = database::establish_connection();
 
     let date_matrix = nord_pool_spot::fetch_prices_from_nord_pool().await?;
-    let date_matrix = date_matrix
-        .iter()
-        .filter(|o| o.is_some())
-        .map(|o| o.as_ref().unwrap());
-
-    for date in date_matrix {
-        for price in &date.cells.0 {
-            price.insert_cell_into_database(&connection);
-        }
-    }
+    price_matrix::insert_matrix_to_database(&connection, &date_matrix)?;
 
     Ok(())
 }
