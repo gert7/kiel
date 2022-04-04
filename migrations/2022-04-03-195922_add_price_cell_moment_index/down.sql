@@ -1,3 +1,3 @@
 -- This file should undo anything in `up.sql`
 
-DROP TABLE switch_records;
+DROP INDEX moment_idx;

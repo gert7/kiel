@@ -8,6 +8,16 @@ table! {
 }
 
 table! {
+    power_states (id) {
+        id -> Int4,
+        moment_utc -> Timestamptz,
+        state -> Int4,
+        configuration_id -> Nullable<Int4>,
+        created_at -> Timestamptz,
+    }
+}
+
+table! {
     price_cells (id) {
         id -> Int4,
         price_mwh -> Numeric,
@@ -28,6 +38,7 @@ table! {
 
 allow_tables_to_appear_in_same_query!(
     day_configurations,
+    power_states,
     price_cells,
     switch_records,
 );

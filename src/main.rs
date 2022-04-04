@@ -69,11 +69,9 @@ async fn fetch_main() -> eyre::Result<()> {
 async fn planner_main() -> eyre::Result<()> {
     let default_base = TariffStrategy;
     let connection = database::establish_connection();
-    let config = ConfigFile::fetch_from_database(&connection, DEFAULT_CONFIG_FILENAME)
-        .expect("No configuration file found anywhere!");
+    let (cfdb, config) = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME)?;
 
     let today = Utc::now().with_timezone(&PLANNING_TZ).date();
-    let today = today - chrono::Duration::days(2);
     let config_today = config.get_day(&today.weekday());
 
     let pdb = PriceCell::get_prices_from_db(&connection, &today);

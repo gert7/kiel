@@ -92,16 +92,24 @@ impl ConfigFile {
         }
     }
 
-    fn config_attempt_loop(
+    pub fn last_id(connection: &PgConnection) -> Result<i32, diesel::result::Error> {
+        use crate::schema::day_configurations::dsl::*;
+        let row = day_configurations
+            .order(id.desc())
+            .first::<ConfigFileDB>(connection)?;
+        Ok(row.id)
+    }
+
+    fn config_attempt_loop<'a>(
         connection: &PgConnection,
-        cfgs: &Vec<ConfigFileDB>,
-    ) -> eyre::Result<ConfigFile> {
+        cfgs: Vec<ConfigFileDB>,
+    ) -> eyre::Result<(ConfigFileDB, ConfigFile)> {
         use crate::schema::day_configurations::dsl::*;
         for cfdb in cfgs {
             let attempt = ConfigFile::decode_config(&cfdb.toml);
             println!("attempt");
             match attempt {
-                Ok(good) => return Ok(good),
+                Ok(good) => return Ok((cfdb, good)),
                 Err(e) => {
                     eprintln!("{}", e);
                     let db_result = update(day_configurations.filter(id.eq(cfdb.id)))
@@ -118,8 +126,7 @@ impl ConfigFile {
 
     pub fn fetch_from_database(
         connection: &PgConnection,
-        default_filename: &str,
-    ) -> eyre::Result<ConfigFile> {
+    ) -> eyre::Result<(ConfigFileDB, ConfigFile)> {
         use crate::schema::day_configurations::dsl::*;
 
         let find = day_configurations
@@ -128,15 +135,22 @@ impl ConfigFile {
             .limit(10)
             .load::<ConfigFileDB>(connection)
             .expect("Unable to load configuration file from database");
-        let good = ConfigFile::config_attempt_loop(&connection, &find);
-        let config_file = match good {
-            Ok(good) => good,
-            Err(e) => {
-                eprintln!("{}", e);
-                ConfigFile::decode_file(default_filename).expect("No default config file found!")
-            }
-        };
-        Ok(config_file)
+        let cfg_pair = ConfigFile::config_attempt_loop(&connection, find)?;
+        Ok(cfg_pair)
+    }
+
+    pub fn fetch_with_default(
+        connection: &PgConnection,
+        default_filename: &str,
+    ) -> eyre::Result<(Option<ConfigFileDB>, ConfigFile)> {
+        let result = ConfigFile::fetch_from_database(connection);
+        match result {
+            Ok(cf) => Ok((Some(cf.0), cf.1)),
+            Err(_) => Ok((
+                None,
+                ConfigFile::decode_file(default_filename).expect("No configuration file found!"),
+            )),
+        }
     }
 }
 
@@ -177,7 +191,8 @@ mod tests {
         };
         diesel::insert_into(day_configurations)
             .values(new_cfg)
-            .get_result(connection).expect("Unable to insert!")
+            .get_result(connection)
+            .expect("Unable to insert!")
     }
 
     const BAD_TOML: &str = "jwraiojfoad";
@@ -189,7 +204,8 @@ mod tests {
         };
         diesel::insert_into(day_configurations)
             .values(new_cfg)
-            .get_result(connection).expect("Unable to insert!")
+            .get_result(connection)
+            .expect("Unable to insert!")
     }
 
     #[test]
@@ -197,7 +213,7 @@ mod tests {
         let connection = database::establish_connection();
         clear_table(&connection);
         insert_good_cfg(&connection);
-        let loaded = ConfigFile::fetch_from_database(&connection, &DEFAULT_CONFIG_FILENAME);
+        let loaded = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME);
         assert!(loaded.is_ok());
     }
 
@@ -205,7 +221,7 @@ mod tests {
     fn loads_default_with_empty_database() {
         let connection = database::establish_connection();
         clear_table(&connection);
-        let loaded = ConfigFile::fetch_from_database(&connection, &DEFAULT_CONFIG_FILENAME);
+        let loaded = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME);
         assert!(loaded.is_ok());
     }
 
@@ -214,7 +230,7 @@ mod tests {
     fn fails_with_wrong_default_config() {
         let connection = database::establish_connection();
         clear_table(&connection);
-        ConfigFile::fetch_from_database(&connection, "samples/fjafiowje.toml").ok();
+        ConfigFile::fetch_with_default(&connection, "samples/fjafiowje.toml").ok();
     }
 
     #[test]
@@ -223,11 +239,17 @@ mod tests {
         clear_table(&connection);
         let db_good = insert_good_cfg(&connection);
         let db_bad = insert_bad_cfg(&connection, false);
-        let good = ConfigFile::fetch_from_database(&connection, DEFAULT_CONFIG_FILENAME);
+        let good = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME);
         assert!(good.is_ok());
 
-        let db_good: ConfigFileDB = day_configurations.find(db_good.id).first(&connection).unwrap();
-        let db_bad: ConfigFileDB = day_configurations.find(db_bad.id).first(&connection).unwrap();
+        let db_good: ConfigFileDB = day_configurations
+            .find(db_good.id)
+            .first(&connection)
+            .unwrap();
+        let db_bad: ConfigFileDB = day_configurations
+            .find(db_bad.id)
+            .first(&connection)
+            .unwrap();
         assert!(db_good.known_broken == false);
         assert!(db_bad.known_broken == true);
     }

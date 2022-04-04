@@ -2,6 +2,11 @@
 name = "kiel"
 version = "0.1.0"
 edition = "2021"
+default-run = "kiel"
+
+[[bin]]
+name = "server"
+path = "server/main.rs"
 
 [dependencies]
 color-eyre = "0.6"
