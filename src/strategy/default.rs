@@ -2,7 +2,7 @@ use chrono::DateTime;
 use chrono_tz::Tz;
 use serde::Deserialize;
 
-use super::{HourStrategy, PlannedChange, PowerState, PriceChangeUnit};
+use super::{HourStrategy, PowerState, PriceChangeUnit};
 use crate::{price_matrix::DaySlice, tariff::Tariff};
 
 #[derive(Clone, Copy, Deserialize)]

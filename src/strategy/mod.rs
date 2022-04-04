@@ -7,6 +7,7 @@ pub mod always;
 pub mod default;
 pub mod limit;
 pub mod smart;
+pub mod power_state_model;
 
 // pub use default::{DefaultStrategy, DefaultStrategyExclSunday};
 
@@ -14,12 +15,6 @@ pub mod smart;
 pub enum PowerState {
     On,
     Off,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct PlannedChange {
-    pub moment: DateTime<Tz>,
-    pub state: PowerState,
 }
 
 #[derive(Clone, Copy, Debug)]

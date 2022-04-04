@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use crate::price_matrix::{DaySlice, PricePerMwh};
 
-use super::{PlannedChange, PriceChangeUnit, MaskablePowerStrategy};
+use super::{PriceChangeUnit, MaskablePowerStrategy};
 
 #[derive(Clone, Copy, Deserialize)]
 pub struct SmartStrategy {

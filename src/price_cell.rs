@@ -18,6 +18,12 @@ pub struct PriceCell {
     pub market_hour: u32,
 }
 
+pub fn get_day_start_end(date: &Date<Tz>) -> (DateTime<Tz>, DateTime<Tz>) {
+    let midnight_start = date.and_hms(0, 0, 0);
+    let midnight_end = date.and_hms(23, 59, 59);
+    (midnight_start, midnight_end)
+}
+
 impl PriceCell {
     pub fn get_tariff_price(
         moment: DateTime<Tz>,
@@ -56,8 +62,7 @@ impl PriceCell {
     pub fn get_prices_from_db(connection: &PgConnection, date: &Date<Tz>) -> DaySlice {
         use self::price_cells::dsl::*;
 
-        let midnight_start = date.and_hms(0, 0, 0);
-        let midnight_end = date.and_hms(23, 59, 59);
+        let (midnight_start, midnight_end) = get_day_start_end(date);
         let cells = price_cells
             .filter(moment_utc.ge(&midnight_start))
             .filter(moment_utc.lt(&midnight_end))
@@ -109,10 +114,10 @@ impl PriceCell {
 pub struct PriceCellDB {
     id: i32,
     price: Decimal,
-    moment: DateTime<Utc>,
+    moment_utc: DateTime<Utc>,
     tariff: Option<Decimal>,
     market_hour: i16,
-    created_at: DateTime<Utc>
+    created_at: DateTime<Utc>,
 }
 
 impl From<PriceCellDB> for PriceCell {
@@ -120,7 +125,7 @@ impl From<PriceCellDB> for PriceCell {
         let tariff_price = pcdb.tariff.map(|d| PricePerMwh(d));
         PriceCell {
             price: PricePerMwh(pcdb.price),
-            moment: pcdb.moment.with_timezone(&MARKET_TZ),
+            moment: pcdb.moment_utc.with_timezone(&MARKET_TZ),
             tariff_price,
             market_hour: pcdb.market_hour.try_into().unwrap(),
         }

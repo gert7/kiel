@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use crate::{price_cell::PriceCell, price_matrix::DaySlice};
 
-use super::{HourStrategy, PlannedChange, PowerState, PriceChangeUnit};
+use super::{HourStrategy, PowerState, PriceChangeUnit};
 
 #[derive(Clone, Copy, Deserialize)]
 pub struct AlwaysOnStrategy;

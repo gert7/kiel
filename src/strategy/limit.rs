@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use crate::price_matrix::{DaySlice, PricePerMwh};
 
-use super::{HourStrategy, MaskablePowerStrategy, PlannedChange, PowerState, PriceChangeUnit};
+use super::{HourStrategy, MaskablePowerStrategy, PowerState, PriceChangeUnit};
 
 #[derive(Clone, Copy, Deserialize)]
 pub struct PriceLimitStrategy {
