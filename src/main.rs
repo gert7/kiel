@@ -14,6 +14,7 @@ mod strategy;
 mod tariff;
 mod integration_test;
 mod convars;
+mod overrides;
 
 use std::{env, fs::File, io::Write, time::Duration};
 
@@ -39,16 +40,6 @@ use crate::{
     strategy::default::TariffStrategy,
 };
 
-const SAMPLE_DAY_PRICES: [Decimal; 8] = [
-    dec!(39.43),
-    dec!(134.30),
-    dec!(74.10),
-    dec!(190.39),
-    dec!(90.39),
-    dec!(190.39),
-    dec!(10.39),
-    dec!(33.39),
-];
 
 async fn fetch_main() -> eyre::Result<()> {
     let connection = database::establish_connection();
@@ -60,7 +51,6 @@ async fn fetch_main() -> eyre::Result<()> {
 }
 
 async fn planner_main() -> eyre::Result<()> {
-    let default_base = TariffStrategy;
     let connection = database::establish_connection();
     let (cfdb, config) = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME)?;
 
@@ -71,13 +61,15 @@ async fn planner_main() -> eyre::Result<()> {
 
     let base = config_today
         .base
-        .unwrap_or(DayBasePlan::Tariff(default_base));
+        .unwrap_or(DayBasePlan::Tariff(TariffStrategy));
     let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &today);
 
-    let strategy_result = match config_today.strategy {
+    let mut strategy_result = match config_today.strategy {
         Some(strategy) => strategy.get_day_strategy().plan_day_masked(&base_prices),
         None => base_prices,
     };
+
+    overrides::apply_overrides(&mut strategy_result, &config, &LOCAL_TZ);
 
     for pcu in strategy_result {
         println!("{:?}", pcu);

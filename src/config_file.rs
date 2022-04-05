@@ -52,8 +52,8 @@ impl DayStrategy {
 
 #[derive(Deserialize)]
 pub struct Day {
-    pub hours_always_on: Option<Vec<u32>>,
-    pub hours_always_off: Option<Vec<u32>>,
+    pub hours_always_on: Option<Vec<u8>>,
+    pub hours_always_off: Option<Vec<u8>>,
     pub base: Option<DayBasePlan>,
     pub strategy: Option<DayStrategy>,
 }
@@ -206,7 +206,7 @@ struct NewConfigFileDB<'a> {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use core::num;
 
     use crate::database;
@@ -219,7 +219,7 @@ mod tests {
         diesel::delete(day_configurations).execute(connection).ok();
     }
 
-    fn insert_good_cfg(connection: &PgConnection) -> ConfigFileDB {
+    pub fn insert_good_cfg(connection: &PgConnection) -> ConfigFileDB {
         let good_toml = std::fs::read_to_string("samples/default.toml").unwrap();
         let new_cfg = NewConfigFileDB {
             toml: &good_toml,

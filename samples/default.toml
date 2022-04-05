@@ -26,3 +26,5 @@ mode = "AlwaysOn"
 hours_always_on = [12, 13, 14, 15]
 
 [sunday]
+mode = "AlwaysOn"
+hours_always_off = [15, 16]

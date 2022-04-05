@@ -2,6 +2,7 @@ use chrono::{Date, Duration, TimeZone};
 use chrono_tz::{Tz, Europe::Berlin};
 use rand::{Rng, thread_rng};
 use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 
 use crate::{price_matrix::{DaySlice, PricePerMwh}, price_cell::PriceCell};
 
@@ -59,3 +60,41 @@ mod tests {
         }
     }
 }
+
+pub const SAMPLE_DAY_PRICES_PARTIAL: [Decimal; 8] = [
+    dec!(39.43),
+    dec!(134.30),
+    dec!(74.10),
+    dec!(190.39),
+    dec!(90.39),
+    dec!(190.39),
+    dec!(10.39),
+    dec!(33.39),
+];
+
+pub const SAMPLE_DAY_PRICES_24: [Decimal; 24] = [
+    dec!(39.43),
+    dec!(134.30),
+    dec!(74.10),
+    dec!(190.39),
+    dec!(90.39),
+    dec!(190.39),
+    dec!(10.39),
+    dec!(33.39),
+    dec!(39.43),
+    dec!(134.30),
+    dec!(74.10),
+    dec!(190.39),
+    dec!(90.39),
+    dec!(190.39),
+    dec!(10.39),
+    dec!(33.39),
+    dec!(39.43),
+    dec!(134.30),
+    dec!(74.10),
+    dec!(190.39),
+    dec!(90.39),
+    dec!(190.39),
+    dec!(10.39),
+    dec!(33.39),
+];
