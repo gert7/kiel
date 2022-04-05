@@ -1,3 +1,4 @@
+use crate::price_cell::NewPriceCellDB;
 use crate::schema::power_states;
 use crate::{constants::PLANNING_TZ, price_cell::get_day_start_end};
 use chrono::{Date, DateTime, Utc};
@@ -30,6 +31,22 @@ impl PowerStateDB {
             PowerState::On => 1,
             PowerState::Off => 0,
         }
+    }
+
+    pub fn insert_day_into_database(
+        connection: &PgConnection,
+        pcu_vec: &Vec<PriceChangeUnit>,
+        configuration_id: Option<i32>,
+    ) {
+        let new_pcus = pcu_vec
+            .iter()
+            .map(|pcu| NewPowerStateDB::from_pcu(&pcu, configuration_id))
+            .collect::<Vec<NewPowerStateDB>>();
+
+        diesel::insert_into(power_states::table)
+            .values(new_pcus)
+            .execute(connection)
+            .expect("Unable to insert power states into database!");
     }
 
     pub fn get_day_from_database<'a>(
@@ -73,7 +90,7 @@ pub struct NewPowerStateDB {
 }
 
 impl NewPowerStateDB {
-    fn from_pcu(pcu: PriceChangeUnit, configuration_id: Option<i32>) -> Self {
+    fn from_pcu(pcu: &PriceChangeUnit, configuration_id: Option<i32>) -> Self {
         NewPowerStateDB {
             moment_utc: pcu.moment.with_timezone(&Utc),
             state: PowerStateDB::state_to_num(pcu.state),
@@ -115,9 +132,7 @@ mod tests {
         for hour in HOURS_OF_DAY {
             let state = hour % 2;
             vec.push(NewPowerStateDB {
-                moment_utc: date
-                    .and_hms(hour.into(), 0, 0)
-                    .with_timezone(&Utc),
+                moment_utc: date.and_hms(hour.into(), 0, 0).with_timezone(&Utc),
                 state: state.try_into().unwrap(),
                 configuration_id: Some(cfid),
             })

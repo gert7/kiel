@@ -192,10 +192,10 @@ impl ConfigFile {
 
 #[derive(Queryable)]
 pub struct ConfigFileDB {
-    id: i32,
-    toml: String,
-    known_broken: bool,
-    created_at: DateTime<Utc>,
+    pub id: i32,
+    pub toml: String,
+    pub known_broken: bool,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Insertable)]

@@ -14,7 +14,7 @@ mod tests {
         schema::{
             convar_ints, convar_strings, day_configurations, power_states, price_cells,
             switch_records,
-        }, strategy::{default::TariffStrategy, PowerState}, overrides,
+        }, strategy::{default::TariffStrategy, PowerState, power_state_model::PowerStateDB}, overrides,
     };
 
     fn clear_all_tables(connection: &PgConnection) -> eyre::Result<()> {
@@ -40,6 +40,7 @@ mod tests {
         let (cfdb, config) =
             ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME).unwrap();
         assert!(cfdb.is_some());
+        let cfdb_id = cfdb.unwrap().id;
 
         let pdb = PriceCell::get_prices_from_db(&connection, &start_date);
         let config_today = config.get_day(&start_date.weekday());
@@ -54,6 +55,8 @@ mod tests {
 
         overrides::apply_overrides(&mut strategy_result, &config, &LOCAL_TZ);
 
+        PowerStateDB::insert_day_into_database(&connection, &strategy_result, Some(cfdb_id));
+
         for h in 0..=13 {
             println!("{}", h);
             assert!(strategy_result[h].state == PowerState::On);
@@ -65,6 +68,21 @@ mod tests {
 
         for h in 16..=23 {
             assert!(strategy_result[h].state == PowerState::On);
+        }
+
+        let cached_prices = PowerStateDB::get_day_from_database(&connection, &start_date, Some(cfdb_id)).unwrap();
+
+        for h in 0..=13 {
+            println!("{}", h);
+            assert!(cached_prices[h].state == PowerState::On);
+        }
+
+        for h in 14..=15 {
+            assert!(cached_prices[h].state == PowerState::Off);
+        }
+
+        for h in 16..=23 {
+            assert!(cached_prices[h].state == PowerState::On);
         }
 
         println!("{:?}", strategy_result);
