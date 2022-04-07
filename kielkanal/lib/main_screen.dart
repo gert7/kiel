@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kielkanal/config_screen/config_screen.dart';
+import 'package:provider/provider.dart';
+
+import 'config_controller/config_controller.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -25,22 +28,22 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final yellow = Colors.amber[200] ?? Colors.yellow;
-
-    // TODO: implement build
-    return SafeArea(
-      child: Scaffold(
-        body: MainScreen._options[_selectedItem],
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_today), label: "Nädalapäevad"),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.access_time_rounded), label: "Täna ja homme"),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.notifications), label: "Teated"),
-          ],
-          onTap: selectItem,
+    return ChangeNotifierProvider<ConfigController>(
+      create: (BuildContext context) => ConfigController.fromSampleConfigFile(),
+      child: SafeArea(
+        child: Scaffold(
+          body: MainScreen._options[_selectedItem],
+          bottomNavigationBar: BottomNavigationBar(
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.calendar_today), label: "Nädalapäevad"),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.access_time_rounded), label: "Täna ja homme"),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.notifications), label: "Teated"),
+            ],
+            onTap: selectItem,
+          ),
         ),
       ),
     );

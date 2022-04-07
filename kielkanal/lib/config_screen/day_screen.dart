@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:kielkanal/config_controller/config_file.dart';
+import 'package:kielkanal/config_screen/kiel_form.dart';
+import 'package:toml/toml.dart';
 
 class DayScreen extends StatefulWidget {
   final int dayNumber;
@@ -31,6 +34,9 @@ class _DayScreenState extends State<DayScreen>
 
   @override
   Widget build(BuildContext context) {
+    final sample = getSample();
+    final back = TomlDocument.fromMap(sample.toMap());
+
     return Column(
       children: [
         TabBar(
@@ -40,8 +46,8 @@ class _DayScreenState extends State<DayScreen>
         ),
         Expanded(
           child: TabBarView(controller: _tabController, children: [
-            Text("hi"),
-            Text("Hello"),
+            KielForm(widget.dayNumber, KielFormType.base),
+            KielForm(widget.dayNumber, KielFormType.strategy),
             Text("What up"),
           ]),
         )

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:kielkanal/formatters.dart';
 import 'package:kielkanal/main_screen.dart';
 
 const defaultIP = "127.0.0.1";
@@ -33,20 +35,18 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final TextEditingController _ip_controller = TextEditingController();
+  final TextEditingController _ipController = TextEditingController();
+  final TextInputFormatter _ipFormatter = IPAddressValidator().getFormatter();
 
   @override
   void initState() {
     super.initState();
-    _ip_controller.text = defaultIP;
+    _ipController.text = defaultIP;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text(widget.title),
-      // ),
       body: Stack(children: [
         SizedBox(
           width: double.infinity,
@@ -66,7 +66,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: TextField(
                   style: Theme.of(context).textTheme.headline4,
                   textAlign: TextAlign.center,
-                  controller: _ip_controller,
+                  controller: _ipController,
+                  inputFormatters: [_ipFormatter],
                   maxLength: 15,
                 ),
               ),
@@ -76,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         context,
                         MaterialPageRoute(
                             builder: (BuildContext context) => WillPopScope(
-                                onWillPop: () async => false,
+                                onWillPop: () async => true,
                                 child: const MainScreen())));
                   },
                   child: Padding(

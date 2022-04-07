@@ -1,4 +1,7 @@
+const sampleTOML = """
 # configuration
+
+[monday]
 
 
 [monday.strategy]
@@ -24,7 +27,4 @@ mode = "AlwaysOn"
 hours_always_on = [12, 13, 14, 15]
 
 [sunday]
-hours_always_off = [15, 16]
-
-[sunday.base]
-mode = "AlwaysOn"
+""";
