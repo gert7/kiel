@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+final numRegex = RegExp('[0-9]');
+
 abstract class KielTextValidator {
-  bool validate(String t);
+  bool allowText(String t);
 
   TextInputFormatter getFormatter() {
     return TextInputFormatter.withFunction((oldValue, newValue) {
-      if (validate(newValue.text)) {
+      if (allowText(newValue.text)) {
         return newValue;
       } else {
         return oldValue;
@@ -16,12 +18,12 @@ abstract class KielTextValidator {
 }
 
 class IPAddressValidator extends KielTextValidator {
-  final _numRegex = RegExp('[0-9]');
+  static const maxLength = 15;
 
   @override
-  bool validate(String t) {
+  bool allowText(String t) {
     for (final c in t.characters) {
-      if (!(c.contains(_numRegex) || c == '.')) {
+      if (!(c.contains(numRegex) || c == '.')) {
         return false;
       }
     }
@@ -29,13 +31,11 @@ class IPAddressValidator extends KielTextValidator {
   }
 }
 
-class DecimalValidator extends KielTextValidator {
-  final _numRegex = RegExp('[0-9]');
-
+class EMWhValidator extends KielTextValidator {
   @override
-  bool validate(String t) {
+  bool allowText(String t) {
     for (final c in t.characters) {
-      if (!(c.contains(_numRegex) || c == '.' || c == ',')) {
+      if (!(c.contains(numRegex) || c == '.' || c == ',')) {
         return false;
       }
     }
@@ -55,13 +55,11 @@ TextInputFormatter getDecimalFormatter() {
   return TextInputFormatter.withFunction(_formatDecimal);
 }
 
-class IntegerValidator extends KielTextValidator {
-  final _numRegex = RegExp('[0-9]');
-
+class HourValidator extends KielTextValidator {
   @override
-  bool validate(String t) {
+  bool allowText(String t) {
     for (final c in t.characters) {
-      if (!(c.contains(_numRegex))) {
+      if (!(c.contains(numRegex))) {
         return false;
       }
     }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:kielkanal/config_controller/base.dart';
-import 'package:kielkanal/config_controller/sample.dart';
 import 'package:kielkanal/config_controller/schema.dart';
 import 'package:kielkanal/config_controller/strategy.dart';
 
@@ -19,6 +18,11 @@ class ConfigControllerTextInput extends ConfigControllerInput {
 
   ConfigControllerTextInput(SchemaItem schema, this.textInput, this.controller)
       : super(schema);
+
+  bool isValid() {
+    print("Validating on: ${controller.text}");
+    return textInput.isValid(controller.text);
+  }
 }
 
 class ControllerDay extends ChangeNotifier {
@@ -51,7 +55,7 @@ class ControllerDay extends ChangeNotifier {
         final input = item.input;
         if (input is KielTextInput) {
           final value = day.strategy?.map[item.tomlName];
-          var textValue;
+          String? textValue;
           if(value is double) {
             textValue = value.toString().replaceAll(".", ",");
           } else if (value is int) {
@@ -62,6 +66,7 @@ class ControllerDay extends ChangeNotifier {
           controller.addListener(() {
             final String text = controller.text;
             print(text);
+            notifyListeners();
           });
           final cci = ConfigControllerTextInput(item, input, controller);
           strategyItems?.add(cci);
@@ -75,13 +80,13 @@ class ConfigController extends ChangeNotifier {
   List<ControllerDay> days = [];
 
   ConfigController.fromConfigFile(ConfigFile configFile) {
-    days.add(ControllerDay.getDayFromConfig(configFile.monday));
-    days.add(ControllerDay.getDayFromConfig(configFile.tuesday));
-    days.add(ControllerDay.getDayFromConfig(configFile.wednesday));
-    days.add(ControllerDay.getDayFromConfig(configFile.thursday));
-    days.add(ControllerDay.getDayFromConfig(configFile.friday));
-    days.add(ControllerDay.getDayFromConfig(configFile.saturday));
-    days.add(ControllerDay.getDayFromConfig(configFile.sunday));
+    for(final day in configFile.days) {
+      final controllerDay = ControllerDay.getDayFromConfig(day);
+      controllerDay.addListener(() {
+        notifyListeners();
+      });
+      days.add(controllerDay);
+    }
   }
 
   static ConfigController fromSampleConfigFile() {

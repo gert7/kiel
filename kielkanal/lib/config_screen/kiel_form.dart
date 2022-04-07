@@ -14,19 +14,26 @@ class KielForm extends StatelessWidget {
   const KielForm(this.day, this.rubric, {Key? key}) : super(key: key);
 
   Widget textLine(BuildContext context, ConfigControllerTextInput input) {
+    final valid = input.isValid();
+    final errorColor = Colors.red[300] ?? Colors.red;
+    final color = valid ? Colors.white : errorColor;
+
     return Row(
       children: [
         Expanded(
             child: Text(
-          input.schema.tomlName,
-          style: Theme.of(context).textTheme.headline5,
-        )),
+              input.schema.prettyName,
+              style: Theme.of(context).textTheme.headline5,
+            )),
         Expanded(
-            child: TextField(
+            child: ColoredBox(
+              color: color,
+              child: TextField(
           controller: input.controller,
           inputFormatters: input.textInput.getFormatters(),
           style: Theme.of(context).textTheme.headline5,
-        ))
+        ),
+            ))
       ],
     );
   }

@@ -51,7 +51,7 @@ class LimitStrategy extends Strategy {
 
   static List<SchemaItem> getSchema() {
     return [
-      SchemaItem("limit_mwh", DecimalInput())
+      SchemaItem("limit_mwh", EMWhInput(), "Limiit (€/MWh)")
     ];
   }
 }
@@ -75,7 +75,7 @@ class SmartStrategy extends Strategy {
 
   static List<SchemaItem> getSchema() {
     return [
-      SchemaItem("hour_budget", IntegerInput())
+      SchemaItem("hour_budget", HourInput(), "Tundide kogus")
     ];
   }
 }

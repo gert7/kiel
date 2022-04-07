@@ -36,7 +36,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _ipController = TextEditingController();
-  final TextInputFormatter _ipFormatter = IPAddressValidator().getFormatter();
+  final _ipFormatter = IPAddressValidator();
 
   @override
   void initState() {
@@ -67,8 +67,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   style: Theme.of(context).textTheme.headline4,
                   textAlign: TextAlign.center,
                   controller: _ipController,
-                  inputFormatters: [_ipFormatter],
-                  maxLength: 15,
+                  inputFormatters: [_ipFormatter.getFormatter()],
+                  maxLength: IPAddressValidator.maxLength,
                 ),
               ),
               ElevatedButton(

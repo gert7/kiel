@@ -34,8 +34,7 @@ class ConfigDay {
   final Base? base;
   final Strategy? strategy;
 
-  ConfigDay(
-      this.hoursAlwaysOn, this.hoursAlwaysOff, this.base, this.strategy);
+  ConfigDay(this.hoursAlwaysOn, this.hoursAlwaysOff, this.base, this.strategy);
 
   static ConfigDay fromMap(Map<String, dynamic> map) {
     final hoursAlwaysOn = intListGiven(map, "hours_always_on");
@@ -59,36 +58,21 @@ class ConfigDay {
 }
 
 class ConfigFile {
-  final ConfigDay monday;
-  final ConfigDay tuesday;
-  final ConfigDay wednesday;
-  final ConfigDay thursday;
-  final ConfigDay friday;
-  final ConfigDay saturday;
-  final ConfigDay sunday;
+  final List<ConfigDay> days = [];
 
-  ConfigFile(this.monday, this.tuesday, this.wednesday, this.thursday,
-      this.friday, this.saturday, this.sunday);
-
-  ConfigFile.fromMap(Map<String, dynamic> map)
-      : monday = ConfigDay.fromMap(map["monday"]),
-        tuesday = ConfigDay.fromMap(map["tuesday"]),
-        wednesday = ConfigDay.fromMap(map["wednesday"]),
-        thursday = ConfigDay.fromMap(map["thursday"]),
-        friday = ConfigDay.fromMap(map["friday"]),
-        saturday = ConfigDay.fromMap(map["saturday"]),
-        sunday = ConfigDay.fromMap(map["sunday"]);
+  ConfigFile.fromMap(Map<String, dynamic> map) {
+    for (final dayName in dayNamesEnglish) {
+      final day = ConfigDay.fromMap(map[dayName.toLowerCase()]);
+      days.add(day);
+    }
+  }
 
   Map toMap() {
-    return {
-      "monday": monday.toMap(),
-      "tuesday": tuesday.toMap(),
-      "wednesday": wednesday.toMap(),
-      "thursday": thursday.toMap(),
-      "friday": friday.toMap(),
-      "saturday": saturday.toMap(),
-      "sunday": sunday.toMap(),
-    };
+    final map = {};
+    for(int i = 0; i < days.length; i++) {
+      map[dayNamesEnglish[i]] = days[i].toMap();
+    }
+    return map;
   }
 }
 

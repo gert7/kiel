@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kielkanal/formatters.dart';
 
@@ -6,40 +7,81 @@ abstract class SchemaInput {}
 class SchemaItem {
   final String tomlName;
 
+  final String prettyName;
+
   final SchemaInput input;
 
-  SchemaItem(this.tomlName, this.input);
+  SchemaItem(this.tomlName, this.input, this.prettyName);
 }
 
 abstract class KielTextInput extends SchemaInput {
   List<TextInputFormatter> getFormatters();
 
-  bool isValid(String s);
+  bool allowText(String s);
+
+  bool isValid(String t);
+
+  int? characterLimit();
 }
 
-class DecimalInput extends KielTextInput {
+class EMWhInput extends KielTextInput {
   @override
   List<TextInputFormatter> getFormatters() {
     return [
-      DecimalValidator().getFormatter(),
+      EMWhValidator().getFormatter(),
       getDecimalFormatter()
     ];
   }
 
   @override
-  bool isValid(String s) => DecimalValidator().validate(s);
+  bool allowText(String s) => EMWhValidator().allowText(s);
+
+  @override
+  bool isValid(String t) {
+    final ta = t.replaceAll(",", ".");
+    print("Allowtext");
+    if(!allowText(ta)) { return false; }
+    print("last");
+    if(!ta.characters.last.contains(numRegex)) {
+      return false;
+    }
+    print("first");
+    if(!ta.characters.first.contains(numRegex)) {
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  int? characterLimit() => 5;
 }
 
-class IntegerInput extends KielTextInput {
+class HourInput extends KielTextInput {
   @override
   List<TextInputFormatter> getFormatters() {
     return [
-      IntegerValidator().getFormatter()
+      HourValidator().getFormatter()
     ];
   }
 
   @override
-  bool isValid(String s) => IntegerValidator().validate(s);
+  bool allowText(String s) => HourValidator().allowText(s);
+
+  @override
+  bool isValid(String t) {
+    final h = int.tryParse(t);
+    if(h != null) {
+      if(h > 24) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  int? characterLimit() => 2;
 }
 
 
