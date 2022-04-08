@@ -8,6 +8,7 @@ pub mod default;
 pub mod limit;
 pub mod smart;
 pub mod power_state_model;
+pub mod none;
 
 // pub use default::{DefaultStrategy, DefaultStrategyExclSunday};
 

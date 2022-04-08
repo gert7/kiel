@@ -1,14 +1,14 @@
-enum BaseType {
+enum BaseMode {
   AlwaysOn,
   AlwaysOff,
   Tariff,
 }
 
-extension on BaseType {
+extension on BaseMode {
   String string() {
-    if (this == BaseType.AlwaysOn) {
+    if (this == BaseMode.AlwaysOn) {
       return "AlwaysOn";
-    } else if (this == BaseType.AlwaysOff) {
+    } else if (this == BaseMode.AlwaysOff) {
       return "AlwaysOff";
     } else {
       return "Tariff";
@@ -16,18 +16,18 @@ extension on BaseType {
   }
 }
 
-BaseType baseTypeFromString(String s) {
+BaseMode baseTypeFromString(String s) {
   if (s == "AlwaysOn") {
-    return BaseType.AlwaysOn;
+    return BaseMode.AlwaysOn;
   } else if (s == "AlwaysOff") {
-    return BaseType.AlwaysOff;
+    return BaseMode.AlwaysOff;
   } else {
-    return BaseType.Tariff;
+    return BaseMode.Tariff;
   }
 }
 
 class Base {
-  final BaseType mode;
+  final BaseMode mode;
 
   Base(this.mode);
 

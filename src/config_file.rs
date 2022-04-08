@@ -12,7 +12,7 @@ use crate::{
         default::TariffStrategy,
         limit::PriceLimitStrategy,
         smart::SmartStrategy,
-        HourStrategy, MaskablePowerStrategy,
+        HourStrategy, MaskablePowerStrategy, none::NoneStrategy,
     },
 };
 
@@ -37,6 +37,7 @@ impl DayBasePlan {
 #[derive(Clone, Copy, Deserialize)]
 #[serde(tag = "mode")]
 pub enum DayStrategy {
+    None(NoneStrategy),
     Limit(PriceLimitStrategy),
     Smart(SmartStrategy),
 }
@@ -44,6 +45,7 @@ pub enum DayStrategy {
 impl DayStrategy {
     pub fn get_day_strategy(self) -> Box<dyn MaskablePowerStrategy> {
         match self {
+            DayStrategy::None(v) => Box::new(v),
             DayStrategy::Limit(v) => Box::new(v),
             DayStrategy::Smart(v) => Box::new(v),
         }

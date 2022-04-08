@@ -1,31 +1,37 @@
 import 'package:decimal/decimal.dart';
 import 'package:kielkanal/config_controller/schema.dart';
 
-enum StrategyType {
+enum StrategyMode {
+  None,
   Limit,
   Smart,
 }
 
-extension on StrategyType {
+extension on StrategyMode {
   String string() {
-    if (this == StrategyType.Limit) {
-      return "Limit";
-    } else {
-      return "Smart";
+    switch (this) {
+      case StrategyMode.None:
+        return "None";
+      case StrategyMode.Limit:
+        return "Limit";
+      case StrategyMode.Smart:
+        return "Smart";
     }
   }
 }
 
-StrategyType strategyTypeFromString(String s) {
+StrategyMode strategyTypeFromString(String s) {
   if (s == "Limit") {
-    return StrategyType.Limit;
+    return StrategyMode.Limit;
+  } else if (s == "Smart") {
+    return StrategyMode.Smart;
   } else {
-    return StrategyType.Smart;
+    return StrategyMode.None;
   }
 }
 
 abstract class Strategy {
-  final StrategyType mode;
+  final StrategyMode mode;
   final Map<String, dynamic> map;
 
   Strategy(this.mode, this.map);
@@ -38,11 +44,11 @@ abstract class Strategy {
 class LimitStrategy extends Strategy {
   final double limit_mwh;
 
-  LimitStrategy(this.limit_mwh, map) : super(StrategyType.Limit, map);
+  LimitStrategy(this.limit_mwh, map) : super(StrategyMode.Limit, map);
 
   LimitStrategy.fromMap(Map<String, dynamic> map)
       : limit_mwh = map["limit_mwh"],
-        super(StrategyType.Limit, map);
+        super(StrategyMode.Limit, map);
 
   @override
   Map toMap() {
@@ -59,11 +65,11 @@ class LimitStrategy extends Strategy {
 class SmartStrategy extends Strategy {
   final int hour_budget;
 
-  SmartStrategy(this.hour_budget, map) : super(StrategyType.Smart, map);
+  SmartStrategy(this.hour_budget, map) : super(StrategyMode.Smart, map);
 
   SmartStrategy.fromMap(Map<String, dynamic> map)
       : hour_budget = map["hour_budget"],
-        super(StrategyType.Smart, map);
+        super(StrategyMode.Smart, map);
 
   @override
   Map toMap() {
@@ -80,19 +86,21 @@ class SmartStrategy extends Strategy {
   }
 }
 
-Strategy strategyFromMap(Map<String, dynamic> map) {
+Strategy? strategyFromMap(Map<String, dynamic> map) {
   switch (strategyTypeFromString(map["mode"])) {
-    case StrategyType.Limit:
+    case StrategyMode.Limit:
       return LimitStrategy(map["limit_mwh"], map);
-    case StrategyType.Smart:
+    case StrategyMode.Smart:
       return SmartStrategy(map["hour_budget"], map);
+    case StrategyMode.None:
+      return null;
   }
 }
 
-List<SchemaItem>? getSchemaByStrategyType(StrategyType? strategyMode) {
-  if(strategyMode == StrategyType.Limit) {
+List<SchemaItem>? getSchemaByStrategyType(StrategyMode? strategyMode) {
+  if(strategyMode == StrategyMode.Limit) {
     return LimitStrategy.getSchema();
-  } else if (strategyMode == StrategyType.Smart) {
+  } else if (strategyMode == StrategyMode.Smart) {
     return SmartStrategy.getSchema();
   } else {
     return null;

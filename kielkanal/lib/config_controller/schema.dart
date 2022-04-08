@@ -39,13 +39,10 @@ class EMWhInput extends KielTextInput {
   @override
   bool isValid(String t) {
     final ta = t.replaceAll(",", ".");
-    print("Allowtext");
     if(!allowText(ta)) { return false; }
-    print("last");
-    if(!ta.characters.last.contains(numRegex)) {
+    if(ta.isEmpty || !ta.characters.last.contains(numRegex)) {
       return false;
     }
-    print("first");
     if(!ta.characters.first.contains(numRegex)) {
       return false;
     }

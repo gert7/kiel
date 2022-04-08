@@ -26,30 +26,24 @@ class ConfigControllerTextInput extends ConfigControllerInput {
 }
 
 class ControllerDay extends ChangeNotifier {
+  ConfigDay day;
   List<int> hoursAlwaysOn;
   List<int> hoursAlwaysOff;
 
-  BaseType? baseMode;
-  List<ConfigControllerInput>? baseItems;
+  late BaseMode baseMode;
+  List<ConfigControllerInput> baseItems = [];
 
-  StrategyType? strategyMode;
+  late StrategyMode strategyMode;
   List<SchemaItem>? strategySchema;
-  List<ConfigControllerInput>? strategyItems;
+  List<ConfigControllerInput> strategyItems = [];
 
-  ControllerDay(this.baseMode, this.baseItems, this.hoursAlwaysOff,
-      this.hoursAlwaysOn);
-
-  ControllerDay.getDayFromConfig(ConfigDay day)
-      : hoursAlwaysOn = day.hoursAlwaysOn ?? [],
-        hoursAlwaysOff = day.hoursAlwaysOff ?? [] {
-    baseMode = day.base?.mode ?? BaseType.Tariff;
-    baseItems = [];
-
-    strategyMode = day.strategy?.mode;
+  void populateStrategySchema(StrategyMode? mode) {
     strategyItems = [];
 
     strategySchema = getSchemaByStrategyType(strategyMode);
     final schema = strategySchema;
+    print(schema);
+    print(strategyMode);
     if (schema != null) {
       for (final item in schema) {
         final input = item.input;
@@ -69,10 +63,35 @@ class ControllerDay extends ChangeNotifier {
             notifyListeners();
           });
           final cci = ConfigControllerTextInput(item, input, controller);
-          strategyItems?.add(cci);
+          strategyItems.add(cci);
         }
       }
     }
+  }
+
+  ControllerDay.getDayFromConfig(this.day)
+      : hoursAlwaysOn = day.hoursAlwaysOn ?? [],
+        hoursAlwaysOff = day.hoursAlwaysOff ?? [] {
+    baseMode = day.base?.mode ?? BaseMode.Tariff; // BASE DEFAULT
+    baseItems = [];
+
+    strategyMode = day.strategy?.mode ?? StrategyMode.None;
+
+    populateStrategySchema(strategyMode);
+  }
+
+  void selectBase(BaseMode mode) {
+    baseMode = mode;
+    notifyListeners();
+  }
+
+  void selectStrategy(StrategyMode mode) {
+    print("selecting strategy");
+    strategyMode = mode;
+    print("populating strategy");
+    populateStrategySchema(mode);
+    print("notifying");
+    notifyListeners();
   }
 }
 
@@ -91,11 +110,6 @@ class ConfigController extends ChangeNotifier {
 
   static ConfigController fromSampleConfigFile() {
     return ConfigController.fromConfigFile(getSample());
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
 
