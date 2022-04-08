@@ -8,7 +8,13 @@ import 'package:kielkanal/main_screen.dart';
 
 const defaultIP = "192.168.1.138";
 
-Future<bool> ipIsValid(String ip) async {
+class IPCheckResult {
+  final String ip;
+  final bool result;
+  IPCheckResult(this.ip, this.result);
+}
+
+Future<IPCheckResult> ipIsValid(String ip) async {
   const testString = "world";
 
   final client = HttpClient();
@@ -18,14 +24,14 @@ Future<bool> ipIsValid(String ip) async {
     final stringData = await response.transform(utf8.decoder).join();
     if (stringData == "Kiel says hello, $testString!") {
       print("kiel says hello");
-      return true;
+      return IPCheckResult(ip, true);
     } else {
       print("connection but no hello");
-      return false;
+      return IPCheckResult(ip, false);
     }
   } catch (e) {
     print(e);
-    return false;
+    return IPCheckResult(ip, false);
   }
 }
 
@@ -61,7 +67,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _ipController = TextEditingController();
   final _ipFormatter = IPAddressValidator();
-  final _ipStreamController = StreamController<bool>();
+  final _ipStreamController = StreamController<IPCheckResult>();
 
   @override
   void initState() {
@@ -100,18 +106,16 @@ class _MyHomePageState extends State<MyHomePage> {
               StreamBuilder(
                 builder: (context, snapshot) {
                   final result = snapshot.data;
-                  print("Rebuilt");
-                  if (snapshot.hasData && result is bool) {
-                    if (result) {
+                  if (snapshot.hasData && result is IPCheckResult) {
+                    if (result.result) {
                       Timer(const Duration(milliseconds: 100), () async {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
                                 builder: (BuildContext context) => WillPopScope(
                                     onWillPop: () async => false,
-                                    child: const MainScreen())));
+                                    child: MainScreenDBFilter(result.ip))));
                       });
-
                     }
                   }
                   return const SizedBox(

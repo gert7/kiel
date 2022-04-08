@@ -67,6 +67,11 @@ class ConfigFile {
     }
   }
 
+  static ConfigFile fromString(String toml) {
+    final decoded = TomlDocument.parse(sampleTOML).toMap();
+    return ConfigFile.fromMap(decoded);
+  }
+
   Map toMap() {
     final map = {};
     for(int i = 0; i < days.length; i++) {
