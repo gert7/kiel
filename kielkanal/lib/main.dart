@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -5,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:kielkanal/formatters.dart';
 import 'package:kielkanal/main_screen.dart';
 
-const defaultIP = "127.0.0.1";
+const defaultIP = "192.168.1.138";
 
 Future<bool> ipIsValid(String ip) async {
   const testString = "world";
@@ -16,8 +17,10 @@ Future<bool> ipIsValid(String ip) async {
     final response = await request.close();
     final stringData = await response.transform(utf8.decoder).join();
     if (stringData == "Kiel says hello, $testString!") {
+      print("kiel says hello");
       return true;
     } else {
+      print("connection but no hello");
       return false;
     }
   } catch (e) {
@@ -58,7 +61,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _ipController = TextEditingController();
   final _ipFormatter = IPAddressValidator();
-  final Future<bool>? checkingFuture = null;
+  final _ipStreamController = StreamController<bool>();
 
   @override
   void initState() {
@@ -94,17 +97,21 @@ class _MyHomePageState extends State<MyHomePage> {
                   keyboardType: TextInputType.number,
                 ),
               ),
-              FutureBuilder(
+              StreamBuilder(
                 builder: (context, snapshot) {
                   final result = snapshot.data;
+                  print("Rebuilt");
                   if (snapshot.hasData && result is bool) {
                     if (result) {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (BuildContext context) => WillPopScope(
-                                  onWillPop: () async => true,
-                                  child: const MainScreen())));
+                      Timer(const Duration(milliseconds: 100), () async {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (BuildContext context) => WillPopScope(
+                                    onWillPop: () async => false,
+                                    child: const MainScreen())));
+                      });
+
                     }
                   }
                   return const SizedBox(
@@ -112,12 +119,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     height: 2.0,
                   );
                 },
-                future: checkingFuture,
+                stream: _ipStreamController.stream,
               ),
               ElevatedButton(
                   onPressed: () async {
-                    final test = await ipIsValid(_ipController.text);
-                    if (test) {}
+                    _ipStreamController.add(await ipIsValid(_ipController.text));
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
