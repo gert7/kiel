@@ -2,6 +2,8 @@ use warp::Filter;
 
 #[tokio::main]
 async fn main() {
+    println!("Running server...");
+
     // GET /hello/warp => 200 OK with body "Hello, warp!"
     let hello = warp::path!("service" / String)
         .map(|name| format!("Kiel says hello, {}!", name));
@@ -14,6 +16,6 @@ async fn main() {
     );
 
     warp::serve(routes)
-        .run(([127, 0, 0, 1], 1996))
+        .run(([127, 0, 0, 1], 8196))
         .await;
 }

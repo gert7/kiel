@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:kielkanal/config_controller/schema.dart';
 
 enum StrategyMode {
