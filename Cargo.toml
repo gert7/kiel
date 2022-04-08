@@ -12,7 +12,7 @@ path = "server/main.rs"
 color-eyre = "0.6"
 reqwest = {version = "0.11.9", features = ["blocking"]}
 thirtyfour = "0.28"
-tokio = "1.17"
+tokio = "1"
 chrono = "0.4"
 chrono-tz = "0.6"
 rust_decimal = { version = "1.22", features = ["db-diesel-postgres"] }
@@ -27,3 +27,4 @@ diesel = { version = "1.4", features = ["postgres", "chrono"] }
 fs2 = "0.4"
 toml = "0.5"
 serde = { version = "1.0", features = ["derive"] }
+warp = "0.3"
