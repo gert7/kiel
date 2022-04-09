@@ -1,0 +1,9 @@
+[Unit]
+Description=Kiel server Daemon
+
+[Service]
+ExecStart=/usr/local/bin/kielserver
+
+[Install]
+WantedBy=default.target
+
