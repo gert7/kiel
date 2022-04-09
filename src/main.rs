@@ -3,8 +3,12 @@ extern crate diesel;
 mod bar_chart;
 mod config_file;
 mod constants;
+mod convars;
 mod database;
+mod integration_test;
 mod nord_pool_spot;
+mod nord_pool_spot_json;
+mod overrides;
 mod price_cell;
 mod price_matrix;
 mod proc_mutex;
@@ -12,9 +16,6 @@ mod sample_data;
 mod schema;
 mod strategy;
 mod tariff;
-mod integration_test;
-mod convars;
-mod overrides;
 
 use std::{env, fs::File, io::Write, time::Duration};
 
@@ -40,11 +41,10 @@ use crate::{
     strategy::default::TariffStrategy,
 };
 
-
 async fn fetch_main() -> eyre::Result<()> {
     let connection = database::establish_connection();
 
-    let date_matrix = nord_pool_spot::fetch_prices_from_nord_pool().await?;
+    let date_matrix = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
     price_matrix::insert_matrix_to_database(&connection, &date_matrix)?;
 
     Ok(())
@@ -134,7 +134,7 @@ async fn main() -> color_eyre::Result<()> {
             eprintln!("\nPlease specify an execution mode:");
             eprintln!("  --fetch");
             eprintln!("  --hour\n");
-            std::process::exit(1);
+            "".to_owned()
         }
     };
 
@@ -144,6 +144,7 @@ async fn main() -> color_eyre::Result<()> {
         // hour_main().await?;
         planner_main().await?;
     } else {
+        let a = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
         eprintln!("Unknown mode: {}", second);
     }
 

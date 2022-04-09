@@ -118,6 +118,7 @@ class KielForm extends StatelessWidget {
             child: ColoredBox(
           color: color,
           child: TextField(
+            maxLength: input.textInput.characterLimit(),
             controller: input.controller,
             inputFormatters: input.textInput.getFormatters(),
             style: Theme.of(context).textTheme.titleLarge,

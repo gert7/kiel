@@ -3,7 +3,6 @@ use std::{env, num::ParseIntError, str::FromStr, time::Duration};
 use chrono::{Date, DateTime, TimeZone};
 use chrono_tz::Tz;
 use color_eyre::eyre::{self, eyre};
-use diesel::Connection;
 use dotenv::dotenv;
 use rust_decimal::Decimal;
 use thirtyfour::{prelude::ElementQueryable, By, DesiredCapabilities, WebDriver, WebElement};
@@ -14,17 +13,18 @@ use crate::{
     price_matrix::{DateColumn, DaySlice, PriceMatrix, PricePerMwh},
 };
 
-fn convert_price_to_decimal(string: &str) -> eyre::Result<Decimal> {
+pub fn convert_price_to_decimal(string: &str) -> eyre::Result<Decimal> {
     let string = string.replace(",", ".");
     Ok(Decimal::from_str(&string)?)
 }
 
 /// Converts an hour string taken directly from an element,
 /// such as `01 - 02` to a `u32`.
-fn convert_hour_to_u32(string: &str) -> Result<u32, ParseIntError> {
+pub fn convert_hour_to_u32(string: &str) -> Result<u32, ParseIntError> {
     let mut string2 = string.to_owned();
     string2.truncate(2);
 
+    println!("{string}");
     Ok(string2.parse::<u32>()?)
 }
 
@@ -44,7 +44,7 @@ fn parse_date_ymd(date: &str, timezone: &Tz) -> Result<Date<Tz>, ParseIntError> 
     Ok(timezone.ymd(year, month, day))
 }
 
-fn parse_date(date: &str, timezone: &Tz) -> eyre::Result<Date<Tz>> {
+pub fn parse_date(date: &str, timezone: &Tz) -> eyre::Result<Date<Tz>> {
     let dmy = parse_date_dmy(date, timezone);
     if dmy.is_ok() {
         return Ok(dmy.unwrap());
