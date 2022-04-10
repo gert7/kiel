@@ -21,6 +21,7 @@ table! {
         id -> Int4,
         toml -> Text,
         known_broken -> Bool,
+        tried -> Bool,
         created_at -> Timestamptz,
     }
 }

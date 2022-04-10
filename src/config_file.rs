@@ -11,8 +11,9 @@ use crate::{
         always::{AlwaysOffStrategy, AlwaysOnStrategy},
         default::TariffStrategy,
         limit::PriceLimitStrategy,
+        none::NoneStrategy,
         smart::SmartStrategy,
-        HourStrategy, MaskablePowerStrategy, none::NoneStrategy,
+        HourStrategy, MaskablePowerStrategy,
     },
 };
 
@@ -144,13 +145,21 @@ impl ConfigFile {
             println!("attempt");
             match attempt {
                 Ok(good) => {
+                    if !cfdb.tried {
+                        let db_result = update(day_configurations.filter(id.eq(cfdb.id)))
+                            .set(tried.eq(true))
+                            .execute(connection);
+                        if let Err(e) = db_result {
+                            eprintln!("{}", e);
+                        };
+                    }
                     Self::reset_failures(connection);
-                    return Ok((cfdb, good))
-                },
+                    return Ok((cfdb, good));
+                }
                 Err(e) => {
                     eprintln!("{}", e);
                     let db_result = update(day_configurations.filter(id.eq(cfdb.id)))
-                        .set(known_broken.eq(true))
+                        .set((known_broken.eq(true), tried.eq(true)))
                         .execute(connection);
                     Self::increment_failures(connection);
                     if let Err(e) = db_result {
@@ -197,6 +206,7 @@ pub struct ConfigFileDB {
     pub id: i32,
     pub toml: String,
     pub known_broken: bool,
+    pub tried: bool,
     pub created_at: DateTime<Utc>,
 }
 
@@ -205,6 +215,7 @@ pub struct ConfigFileDB {
 struct NewConfigFileDB<'a> {
     toml: &'a str,
     known_broken: bool,
+    tried: bool,
 }
 
 #[cfg(test)]
@@ -226,6 +237,7 @@ pub mod tests {
         let new_cfg = NewConfigFileDB {
             toml: &good_toml,
             known_broken: false,
+            tried: false,
         };
         diesel::insert_into(day_configurations)
             .values(new_cfg)
@@ -239,6 +251,7 @@ pub mod tests {
         let new_cfg = NewConfigFileDB {
             toml: BAD_TOML,
             known_broken: known_broken_val,
+            tried: false,
         };
         diesel::insert_into(day_configurations)
             .values(new_cfg)

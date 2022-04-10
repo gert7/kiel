@@ -152,7 +152,7 @@ async fn main() -> color_eyre::Result<()> {
         // hour_main().await?;
         planner_main().await?;
     } else {
-        let a = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
+        // let a = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
         eprintln!("Unknown mode: {}", second);
     }
 
