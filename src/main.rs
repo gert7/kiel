@@ -33,6 +33,7 @@ use diesel::prelude::*;
 use proc_mutex::wait_for_file;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use strategy::power_state_model::PowerStateDB;
 
 use crate::{
     config_file::DayBasePlan,
@@ -70,6 +71,13 @@ async fn planner_main() -> eyre::Result<()> {
     };
 
     overrides::apply_overrides(&mut strategy_result, &config, &LOCAL_TZ);
+
+    let conf_id = match cfdb {
+        Some(cfdb) => Some(cfdb.id),
+        None => None,
+    };
+
+    PowerStateDB::insert_day_into_database(&connection, &strategy_result, conf_id);
 
     for pcu in strategy_result {
         println!("{:?}", pcu);
