@@ -1,4 +1,4 @@
-use std::{env, fs::File, io::Write};
+use std::{collections::BTreeMap, env, fs::File, io::Write};
 
 use color_eyre::eyre;
 use color_eyre::eyre::eyre;
@@ -8,7 +8,7 @@ use json::JsonValue;
 use crate::{
     constants::MARKET_TZ,
     nord_pool_spot::{
-        convert_hour_to_u32, convert_price_to_decimal, parse_date, retrieve_datetime,
+        self, convert_hour_to_u32, convert_price_to_decimal, parse_date, retrieve_datetime,
     },
     price_cell::PriceCell,
     price_matrix::{DateColumn, DaySlice, PriceMatrix, PricePerMwh},
@@ -21,6 +21,7 @@ pub fn decode_json(body: &str) -> eyre::Result<PriceMatrix> {
 
     let mut date_strings: Vec<String> = vec![];
     let mut date_vectors: PriceMatrix = vec![];
+    let mut date_map: BTreeMap<String, Option<DateColumn>> = BTreeMap::new();
 
     if let JsonValue::Array(day) = days {
         for day in day {
@@ -53,29 +54,36 @@ pub fn decode_json(body: &str) -> eyre::Result<PriceMatrix> {
             println!("{}", hour);
             let columns = &row["Columns"];
             if let JsonValue::Array(vec) = columns {
-                for (date_i, column) in vec.iter().enumerate() {
-                    match &mut date_vectors[date_i] {
-                        Some(date_vector_column) => {
-                            let price = column["Value"].as_str().ok_or(eyre!("Missing Value"))?;
-                            let dateline = &date_strings[date_i];
-                            let moment = retrieve_datetime(dateline, hour, &MARKET_TZ)?;
-                            match convert_price_to_decimal(price) {
-                                Ok(dec_price) => date_vector_column.cells.0.push(PriceCell {
+                for cell in vec {
+                    let dateline = cell["Name"].as_str().ok_or(eyre!("Missing dateline"))?;
+
+                    if !date_map.contains_key(dateline) {
+                        let formal_date = parse_date(dateline, &MARKET_TZ)?;
+                        date_map.insert(dateline.to_owned(), Some(DateColumn::new(formal_date)));
+                    }
+
+                    let price = cell["Value"].as_str().ok_or(eyre!("Missing Value"))?;
+                    let moment = retrieve_datetime(dateline, hour, &MARKET_TZ)?;
+                    match convert_price_to_decimal(price) {
+                        Ok(dec_price) => {
+                            match date_map.get_mut(dateline).unwrap() {
+                                Some(cells) => cells.cells.0.push(PriceCell {
                                     price: PricePerMwh(dec_price),
-                                    moment: moment,
+                                    moment,
                                     tariff_price: Some(PriceCell::get_tariff_price_current(moment)),
                                     market_hour: hour,
                                 }),
-                                Err(_) => continue,
+                                None => todo!(),
                             }
                         }
-                        None => continue,
+                        Err(_) => continue,
                     }
                 }
             }
         }
     }
-    Ok(date_vectors)
+    let map_to_vec = date_map.into_values().collect();
+    Ok(map_to_vec)
 }
 
 pub async fn fetch_json_from_nord_pool() -> eyre::Result<PriceMatrix> {

@@ -43,6 +43,12 @@ pub struct DateColumn {
     pub cells: DaySlice,
 }
 
+impl DateColumn {
+    pub fn new(date: Date<Tz>) -> DateColumn {
+        DateColumn { date, cells: DaySlice(vec![]) }
+    }
+}
+
 pub type PriceMatrix = Vec<Option<DateColumn>>;
 
 #[derive(Clone, Debug)]

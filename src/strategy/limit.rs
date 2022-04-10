@@ -15,7 +15,7 @@ impl MaskablePowerStrategy for PriceLimitStrategy {
         mask.iter()
             .map(|pcu| match pcu.price {
                 Some(price) => {
-                    if price.price.0 > self.limit_mwh {
+                    if price.total().0 > self.limit_mwh {
                         PriceChangeUnit {
                             moment: price.moment,
                             price: pcu.price,
