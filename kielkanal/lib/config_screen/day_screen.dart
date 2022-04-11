@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:kielkanal/config_controller/config_controller.dart';
 import 'package:kielkanal/config_controller/config_file.dart';
 import 'package:kielkanal/config_screen/kiel_form.dart';
 import 'package:kielkanal/config_screen/weekly_overrides.dart';
+import 'package:provider/provider.dart';
 import 'package:toml/toml.dart';
 
 class DayScreen extends StatefulWidget {
@@ -51,7 +53,7 @@ class _DayScreenState extends State<DayScreen>
             KielForm(widget.dayNumber, KielFormType.strategy),
             WeeklyOverrideWidget(widget.dayNumber),
           ]),
-        )
+        ),
       ],
     );
   }

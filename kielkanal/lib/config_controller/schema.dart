@@ -50,7 +50,9 @@ class EMWhInput extends KielTextInput {
   }
 
   @override
-  int? characterLimit() => 5;
+  int? characterLimit() => 6;
+
+  static double getDouble(String e) => double.parse(e.replaceAll(",", "."));
 }
 
 class HourInput extends KielTextInput {
@@ -79,6 +81,8 @@ class HourInput extends KielTextInput {
 
   @override
   int? characterLimit() => 2;
+
+  static int getInt(String e) => int.parse(e);
 }
 
 

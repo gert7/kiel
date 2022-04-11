@@ -1,5 +1,4 @@
-use std::{collections::BTreeMap, env, fs::File, io::Write};
-
+use std::{collections::BTreeMap, env}; 
 use color_eyre::eyre;
 use color_eyre::eyre::eyre;
 use dotenv::dotenv;
@@ -8,43 +7,21 @@ use json::JsonValue;
 use crate::{
     constants::MARKET_TZ,
     nord_pool_spot::{
-        self, convert_hour_to_u32, convert_price_to_decimal, parse_date, retrieve_datetime,
+        convert_hour_to_u32, convert_price_to_decimal, parse_date, retrieve_datetime,
     },
     price_cell::PriceCell,
-    price_matrix::{DateColumn, DaySlice, PriceMatrix, PricePerMwh},
+    price_matrix::{DateColumn, PriceMatrix, PricePerMwh},
 };
 
 pub fn decode_json(body: &str) -> eyre::Result<PriceMatrix> {
     let json = json::parse(&body)?;
-    let first_hour = &json["data"]["Rows"][0];
-    let days = &first_hour["Columns"];
 
-    let mut date_strings: Vec<String> = vec![];
-    let mut date_vectors: PriceMatrix = vec![];
     let mut date_map: BTreeMap<String, Option<DateColumn>> = BTreeMap::new();
-
-    if let JsonValue::Array(day) = days {
-        for day in day {
-            let date = &day["Name"];
-            let date = date.as_str().ok_or(eyre!("Date parse failed"))?.to_owned();
-            match parse_date(&date, &MARKET_TZ) {
-                Ok(date) => date_vectors.push(Some(DateColumn {
-                    date,
-                    cells: DaySlice(vec![]),
-                })),
-                Err(_) => date_vectors.push(None),
-            }
-            date_strings.push(date);
-        }
-    }
 
     let rows = &json["data"]["Rows"];
 
     if let JsonValue::Array(vec) = rows {
-        let mut i = 0;
         for row in vec {
-            println!("row {i}");
-            i += 1;
             let hour = row["Name"].as_str().ok_or(eyre!("Missing hour name"))?;
             let hour = convert_hour_to_u32(hour);
             let hour = match hour {

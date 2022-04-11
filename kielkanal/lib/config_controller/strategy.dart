@@ -1,5 +1,7 @@
 import 'package:kielkanal/config_controller/schema.dart';
 
+import 'config_controller.dart';
+
 enum StrategyMode {
   None,
   Limit,
@@ -31,9 +33,11 @@ StrategyMode strategyTypeFromString(String s) {
 
 abstract class Strategy {
   final StrategyMode mode;
-  final Map<String, dynamic> map;
+  Map<String, dynamic>? map;
 
   Strategy(this.mode, this.map);
+
+  Strategy.withoutMap(this.mode) : map = null;
 
   Map toMap() {
     return {"mode": mode.string()};
@@ -41,47 +45,65 @@ abstract class Strategy {
 }
 
 class LimitStrategy extends Strategy {
-  final double limit_mwh;
+  late final double limit_mwh;
+  static const limitMWhKey = "limit_mwh";
 
   LimitStrategy(this.limit_mwh, map) : super(StrategyMode.Limit, map);
 
   LimitStrategy.fromMap(Map<String, dynamic> map)
-      : limit_mwh = map["limit_mwh"],
+      : limit_mwh = map[limitMWhKey],
         super(StrategyMode.Limit, map);
+
+  LimitStrategy.fromControllerInputs(List<ConfigControllerInput> cciList)
+      : super.withoutMap(StrategyMode.Limit) {
+    for (final cci in cciList) {
+      if (cci is ConfigControllerTextInput &&
+          cci.schema.tomlName == limitMWhKey) {
+        limit_mwh = EMWhInput.getDouble(cci.controller.text);
+      }
+    }
+  }
 
   @override
   Map toMap() {
-    return {"mode": mode.string(), "limit_mwh": limit_mwh};
+    return {"mode": mode.string(), limitMWhKey: limit_mwh};
   }
 
   static List<SchemaItem> getSchema() {
-    return [
-      SchemaItem("limit_mwh", EMWhInput(), "Limiit (€/MWh)")
-    ];
+    return [SchemaItem("limit_mwh", EMWhInput(), "Limiit (€/MWh)")];
   }
 }
 
 class SmartStrategy extends Strategy {
-  final int hour_budget;
+  late final int hour_budget;
+  static const hourBudgetKey = "hour_budget";
 
   SmartStrategy(this.hour_budget, map) : super(StrategyMode.Smart, map);
 
   SmartStrategy.fromMap(Map<String, dynamic> map)
-      : hour_budget = map["hour_budget"],
+      : hour_budget = map[hourBudgetKey],
         super(StrategyMode.Smart, map);
+
+  SmartStrategy.fromControllerInputs(List<ConfigControllerInput> cciList)
+      : super.withoutMap(StrategyMode.Smart) {
+    for (final cci in cciList) {
+      if (cci is ConfigControllerTextInput &&
+          cci.schema.tomlName == hourBudgetKey) {
+        hour_budget = HourInput.getInt(cci.controller.text);
+      }
+    }
+  }
 
   @override
   Map toMap() {
     return {
       "mode": mode.string(),
-      "hour_budget": hour_budget,
+      hourBudgetKey: hour_budget,
     };
   }
 
   static List<SchemaItem> getSchema() {
-    return [
-      SchemaItem("hour_budget", HourInput(), "Tundide kogus")
-    ];
+    return [SchemaItem("hour_budget", HourInput(), "Tundide kogus")];
   }
 }
 
@@ -96,8 +118,18 @@ Strategy? strategyFromMap(Map<String, dynamic> map) {
   }
 }
 
+Strategy? strategyFromInputs(StrategyMode? mode, List<ConfigControllerInput> cciList) {
+  if(mode == StrategyMode.Limit) {
+    return LimitStrategy.fromControllerInputs(cciList);
+  } else if (mode == StrategyMode.Smart) {
+    return SmartStrategy.fromControllerInputs(cciList);
+  } else {
+    return null;
+  }
+}
+
 List<SchemaItem>? getSchemaByStrategyType(StrategyMode? strategyMode) {
-  if(strategyMode == StrategyMode.Limit) {
+  if (strategyMode == StrategyMode.Limit) {
     return LimitStrategy.getSchema();
   } else if (strategyMode == StrategyMode.Smart) {
     return SmartStrategy.getSchema();

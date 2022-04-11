@@ -58,9 +58,11 @@ class ConfigDay {
 }
 
 class ConfigFile {
-  final List<ConfigDay> days = [];
+  final List<ConfigDay> days;
 
-  ConfigFile.fromMap(Map<String, dynamic> map) {
+  ConfigFile(this.days);
+
+  ConfigFile.fromMap(Map<String, dynamic> map) : days = [] {
     for (final dayName in dayNamesEnglish) {
       final day = ConfigDay.fromMap(map[dayName.toLowerCase()]);
       days.add(day);

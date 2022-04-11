@@ -48,7 +48,7 @@ class ControllerDay extends ChangeNotifier {
       for (final item in schema) {
         final input = item.input;
         if (input is KielTextInput) {
-          final value = day.strategy?.map[item.tomlName];
+          final value = day.strategy?.map?[item.tomlName];
           String? textValue;
           if(value is double) {
             textValue = value.toString().replaceAll(".", ",");
@@ -93,6 +93,20 @@ class ControllerDay extends ChangeNotifier {
     print("notifying");
     notifyListeners();
   }
+
+  void cycleHour(int hour) {
+    if (hour >= 0 && hour <= 23) {
+      if(hoursAlwaysOn.contains(hour)) {
+        hoursAlwaysOn.remove(hour);
+        hoursAlwaysOff.add(hour);
+      } else if (hoursAlwaysOff.contains(hour)) {
+        hoursAlwaysOff.remove(hour);
+      } else {
+        hoursAlwaysOn.add(hour);
+      }
+      notifyListeners();
+    }
+  }
 }
 
 class ConfigController extends ChangeNotifier {
@@ -111,5 +125,17 @@ class ConfigController extends ChangeNotifier {
   static ConfigController fromSampleConfigFile() {
     return ConfigController.fromConfigFile(getSample());
   }
-}
 
+  ConfigFile toConfigFile() {
+    final newDays = days.map((cDay) {
+      final base = Base(cDay.baseMode);
+      final strategy = strategyFromInputs(cDay.strategyMode, cDay.strategyItems);
+      return ConfigDay(cDay.hoursAlwaysOn, cDay.hoursAlwaysOff, base, strategy);
+    }).toList();
+    return ConfigFile(newDays);
+  }
+
+  Map toMap() {
+    return toConfigFile().toMap();
+  }
+}

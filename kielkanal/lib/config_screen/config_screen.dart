@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kielkanal/config_controller/config_controller.dart';
 import 'package:kielkanal/config_screen/day_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:toml/toml.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({Key? key}) : super(key: key);
@@ -104,17 +107,38 @@ class _ConfigScreenState extends State<ConfigScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
-    return Stack(
+    return Column(
       children: [
-        IgnorePointer(
-          ignoring: selectorOpen,
-          child: dayForm(selectedDay),
+        Expanded(
+          child: Stack(
+            children: [
+              IgnorePointer(
+                ignoring: selectorOpen,
+                child: dayForm(selectedDay),
+              ),
+              AnimatedPositioned(
+                  duration: const Duration(milliseconds: 500),
+                  left: selectorOpen ? 0.0 : -screenWidth,
+                  curve: Curves.fastOutSlowIn,
+                  child: daySelector()),
+            ],
+          ),
         ),
-        AnimatedPositioned(
-            duration: const Duration(milliseconds: 500),
-            left: selectorOpen ? 0.0 : -screenWidth,
-            curve: Curves.fastOutSlowIn,
-            child: daySelector()),
+        Consumer<ConfigController>(
+          builder: (context, controller, child) {
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SizedBox(
+                  height: 64,
+                  width: double.infinity,
+                  child: ElevatedButton(onPressed: () {
+                    final map = controller.toMap();
+                    final toml = TomlDocument.fromMap(map);
+                    print(toml);
+                  }, child: const Text("Kinnita muudatused"))),
+            );
+          },
+        ),
       ],
     );
   }
