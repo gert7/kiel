@@ -48,15 +48,15 @@ class ControllerDay extends ChangeNotifier {
       for (final item in schema) {
         final input = item.input;
         if (input is KielTextInput) {
-          final value = day.strategy?.map?[item.tomlName];
-          String? textValue;
+          final value = day.strategy?.map[item.tomlName];
+          String textValue = "";
           if(value is double) {
             textValue = value.toString().replaceAll(".", ",");
           } else if (value is int) {
             textValue = value.toString();
           }
           final controller = TextEditingController.fromValue(
-              TextEditingValue(text: textValue ?? ""));
+              TextEditingValue(text: textValue));
           controller.addListener(() {
             final String text = controller.text;
             print(text);
