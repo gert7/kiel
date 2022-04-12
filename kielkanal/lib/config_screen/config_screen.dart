@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kielkanal/config_controller/config_controller.dart';
-import 'package:kielkanal/config_screen/day_screen.dart';
+import 'package:kielkanal/config_screen/weekday_screen.dart';
+import 'package:kielkanal/main_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:toml/toml.dart';
 
@@ -98,7 +99,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
             ))
           ],
         ),
-        Expanded(child: DayScreen(selectedDay))
+        Expanded(child: WeekdayScreen(selectedDay))
       ],
     );
   }
@@ -135,6 +136,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     final map = controller.toMap();
                     final toml = TomlDocument.fromMap(map);
                     print(toml);
+                    ReloadNotification("Kinnitan muudatused").dispatch(context);
                   }, child: const Text("Kinnita muudatused"))),
             );
           },

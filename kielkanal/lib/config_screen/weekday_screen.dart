@@ -6,16 +6,16 @@ import 'package:kielkanal/config_screen/weekly_overrides.dart';
 import 'package:provider/provider.dart';
 import 'package:toml/toml.dart';
 
-class DayScreen extends StatefulWidget {
+class WeekdayScreen extends StatefulWidget {
   final int dayNumber;
 
-  const DayScreen(this.dayNumber, {Key? key}) : super(key: key);
+  const WeekdayScreen(this.dayNumber, {Key? key}) : super(key: key);
 
   @override
-  State<DayScreen> createState() => _DayScreenState();
+  State<WeekdayScreen> createState() => _WeekdayScreenState();
 }
 
-class _DayScreenState extends State<DayScreen>
+class _WeekdayScreenState extends State<WeekdayScreen>
     with SingleTickerProviderStateMixin {
   static const tabs = <Tab>[
     Tab(

@@ -99,7 +99,7 @@ class SmartStrategy extends Strategy {
   }
 
   static List<SchemaItem> getSchema() {
-    return [SchemaItem("hour_budget", HourInput(), "Tundide kogus")];
+    return [SchemaItem(hourBudgetKey, HourInput(), "Tundide kogus")];
   }
 }
 

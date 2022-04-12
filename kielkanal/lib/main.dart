@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:kielkanal/formatters.dart';
 import 'package:kielkanal/main_screen.dart';
 
+import 'package:timezone/data/latest.dart' as tz;
+
 const defaultIP = "192.168.1.138";
 
 class IPCheckResult {
@@ -36,6 +38,7 @@ Future<IPCheckResult> ipIsValid(String ip) async {
 }
 
 void main() {
+  tz.initializeTimeZones();
   runApp(const MyApp());
 }
 

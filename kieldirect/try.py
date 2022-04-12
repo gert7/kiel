@@ -33,7 +33,7 @@ def main():
         exit(1)
 
     plug_uid = os.getenv("KIEL_PLUG_UID")
-    print(plug_uid)
+    special_word = os.getenv("KIEL_SPECIAL_WORD").lower()
 
     b = Bridge('192.168.1.201')
 
@@ -43,7 +43,12 @@ def main():
         if light['uniqueid'] == plug_uid:
             to_i = int(key)
             set_light(b, to_i, state)
-            break
+            print(light['uniqueid'])
+            continue
+        if light['name'].lower().__contains__(special_word):
+            to_i = int(key)
+            set_light(b, to_i, state)
+            print(light['uniqueid'])
 
 if __name__ == "__main__":
     main()
