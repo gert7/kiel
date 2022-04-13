@@ -191,6 +191,9 @@ impl ConfigFile {
         default_filename: &str,
     ) -> eyre::Result<(Option<ConfigFileDB>, ConfigFile)> {
         let result = ConfigFile::fetch_from_database(connection);
+        if result.is_ok() {
+            println!("Found configuration in database");
+        }
         match result {
             Ok(cf) => Ok((Some(cf.0), cf.1)),
             Err(_) => Ok((

@@ -70,19 +70,19 @@ mod tests {
             assert!(strategy_result[h].state == PowerState::On);
         }
 
-        let cached_prices = PowerStateDB::get_day_from_database(&connection, &start_date, Some(cfdb_id)).unwrap();
+        let cached_states = PowerStateDB::get_day_from_database(&connection, &start_date, Some(cfdb_id)).unwrap();
 
         for h in 0..=13 {
             println!("{}", h);
-            assert!(cached_prices[h].state == PowerState::On);
+            assert!(cached_states[h].state == PowerState::On);
         }
 
         for h in 14..=15 {
-            assert!(cached_prices[h].state == PowerState::Off);
+            assert!(cached_states[h].state == PowerState::Off);
         }
 
         for h in 16..=23 {
-            assert!(cached_prices[h].state == PowerState::On);
+            assert!(cached_states[h].state == PowerState::On);
         }
 
         println!("{:?}", strategy_result);

@@ -1,5 +1,7 @@
+use std::ops::Range;
+
 use crate::{price_matrix::DaySlice, schema::price_cells};
-use chrono::{Date, DateTime, Utc};
+use chrono::{Date, DateTime, Utc, Timelike};
 use chrono_tz::Tz;
 use color_eyre::eyre;
 use diesel::{connection, prelude::*, Connection, PgConnection};
@@ -17,6 +19,12 @@ pub struct PriceCell {
     pub moment: DateTime<Tz>,
     pub tariff_price: Option<PricePerMwh>,
     pub market_hour: u32,
+}
+
+pub fn get_hour_start_end(datetime: &DateTime<Tz>) -> Range<DateTime<Tz>> {
+    let start = datetime.date().and_hms(datetime.hour(), 0, 0);
+    let end = datetime.date().and_hms(datetime.hour() + 1, 0, 0);
+    Range { start, end }
 }
 
 pub fn get_day_start_end(date: &Date<Tz>) -> (DateTime<Tz>, DateTime<Tz>) {
