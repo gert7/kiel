@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate diesel;
+mod apply;
 mod bar_chart;
 mod config_file;
 mod constants;
@@ -15,14 +16,16 @@ mod proc_mutex;
 mod sample_data;
 mod schema;
 mod strategy;
+mod switch_records;
 mod tariff;
 
 use std::{env, fs::File, io::Write, time::Duration};
 
-use chrono::{Date, Datelike, Local, TimeZone, Utc};
+use chrono::{Date, DateTime, Datelike, Local, TimeZone, Utc};
 use chrono_tz::{
     America::Sao_Paulo,
     Europe::{Berlin, Tallinn},
+    Tz,
 };
 use color_eyre::eyre;
 use color_eyre::eyre::eyre;
@@ -30,12 +33,14 @@ use config_file::ConfigFile;
 use constants::{DEFAULT_CONFIG_FILENAME, LOCAL_TZ, MARKET_TZ, PLANNING_TZ};
 use diesel::prelude::*;
 
+use price_cell::get_hour_start_end;
 use proc_mutex::wait_for_file;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
-use strategy::power_state_model::PowerStateDB;
+use strategy::{power_state_model::PowerStateDB, PowerState, PriceChangeUnit};
 
 use crate::{
+    apply::apply_power_state,
     config_file::DayBasePlan,
     price_cell::{NewPriceCellDB, PriceCell, PriceCellDB},
     price_matrix::CentsPerKwh,
@@ -51,36 +56,79 @@ async fn fetch_main() -> eyre::Result<()> {
     Ok(())
 }
 
+fn get_power_state(datetime: &DateTime<Tz>, states: &Vec<PriceChangeUnit>) -> Option<PowerState> {
+    let mut candidate: Option<PowerState> = None;
+    for pcu in states {
+        if pcu.moment <= *datetime {
+            candidate = Some(pcu.state);
+        } else if pcu.moment > *datetime {
+            break;
+        }
+    }
+    candidate
+}
+
+fn get_power_state_exact(
+    datetime: &DateTime<Tz>,
+    states: &Vec<PriceChangeUnit>,
+) -> Option<PowerState> {
+    let range = get_hour_start_end(datetime);
+    for pcu in states {
+        if range.contains(&pcu.moment) {
+            println!("Range found: {:?}: {:?}", pcu.moment, range);
+            return Some(pcu.state);
+        } else {
+            // println!("Range doesn't contain {:?}: {:?}", pcu.moment, range);
+        }
+    }
+    None
+}
+
 async fn planner_main() -> eyre::Result<()> {
     let connection = database::establish_connection();
     let (cfdb, config) = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME)?;
-
-    let today = Utc::now().with_timezone(&PLANNING_TZ).date();
-    let config_today = config.get_day(&today.weekday());
-
-    let pdb = PriceCell::get_prices_from_db(&connection, &today);
-
-    let base = config_today
-        .base
-        .unwrap_or(DayBasePlan::Tariff(TariffStrategy));
-    let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &today);
-
-    let mut strategy_result = match config_today.strategy {
-        Some(strategy) => strategy.get_day_strategy().plan_day_masked(&base_prices),
-        None => base_prices,
-    };
-
-    overrides::apply_overrides(&mut strategy_result, &config, &LOCAL_TZ);
-
     let conf_id = match cfdb {
         Some(cfdb) => Some(cfdb.id),
         None => None,
     };
+    println!("conf id {:?}", conf_id);
 
-    PowerStateDB::insert_day_into_database(&connection, &strategy_result, conf_id);
+    let now = Utc::now().with_timezone(&PLANNING_TZ);
+    let today = now.date();
 
-    for pcu in strategy_result {
-        println!("{:?}", pcu);
+    let cached_states = PowerStateDB::get_day_from_database(&connection, &today, conf_id)?;
+    let exact_known_state = get_power_state_exact(&now, &cached_states);
+    println!("Current cached state: {:?}", exact_known_state);
+
+    match exact_known_state {
+        Some(known_state) => apply_power_state(&connection, &known_state).await?,
+        None => {
+            let config_today = config.get_day(&today.weekday());
+
+            let pdb = PriceCell::get_prices_from_db(&connection, &today);
+
+            let base = config_today
+                .base
+                .unwrap_or(DayBasePlan::Tariff(TariffStrategy));
+            let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &today);
+
+            let mut strategy_result = match config_today.strategy {
+                Some(strategy) => strategy.get_day_strategy().plan_day_masked(&base_prices),
+                None => base_prices,
+            };
+
+            overrides::apply_overrides(&mut strategy_result, &config, &LOCAL_TZ);
+
+            PowerStateDB::insert_day_into_database(&connection, &strategy_result, conf_id);
+            for pcu in &strategy_result {
+                println!("{:?}", pcu);
+            }
+
+            let state = get_power_state_exact(&now, &strategy_result);
+            if let Some(state) = state {
+                apply_power_state(&connection, &state).await?;
+            }
+        }
     }
 
     Ok(())

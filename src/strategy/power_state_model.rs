@@ -4,11 +4,12 @@ use crate::{constants::PLANNING_TZ, price_cell::get_day_start_end};
 use chrono::{Date, DateTime, Utc};
 use chrono_tz::Tz;
 use color_eyre::eyre;
-use diesel::{prelude::*, PgConnection};
+use diesel::pg::Pg;
+use diesel::{debug_query, prelude::*, PgConnection};
 
 use super::{PowerState, PriceChangeUnit};
 
-#[derive(Queryable)]
+#[derive(Debug, Queryable)]
 pub struct PowerStateDB {
     id: i32,
     moment_utc: DateTime<Utc>,
@@ -57,13 +58,22 @@ impl PowerStateDB {
         use crate::schema::power_states::dsl::*;
 
         let (day_start, day_end) = get_day_start_end(&day);
+        println!("Day from database: {:?} {:?}", day_start, day_end);
 
-        let result = power_states
-            .filter(moment_utc.ge(&day_start))
-            .filter(moment_utc.lt(&day_end))
-            .filter(configuration_id.eq(configuration_id_val))
-            .limit(48)
-            .load::<PowerStateDB>(connection)?;
+        let result = match configuration_id_val {
+            Some(conf_id) => power_states
+                .filter(moment_utc.ge(&day_start))
+                .filter(moment_utc.lt(&day_end))
+                .filter(configuration_id.eq(conf_id))
+                .limit(48)
+                .load::<PowerStateDB>(connection)?,
+            None => power_states
+                .filter(moment_utc.ge(&day_start))
+                .filter(moment_utc.lt(&day_end))
+                .filter(configuration_id.is_null())
+                .limit(48)
+                .load::<PowerStateDB>(connection)?,
+        };
 
         let vec = result.into_iter().map(|psdb| psdb.into()).collect();
 

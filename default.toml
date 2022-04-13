@@ -18,6 +18,9 @@ mode = "AlwaysOn"
 
 [wednesday]
 
+[wednesday.base]
+mode = "AlwaysOn"
+
 [thursday]
 
 [friday]
