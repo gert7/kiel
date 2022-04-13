@@ -1,10 +1,11 @@
 #!/bin/sh
 
-export USYSDIR=.config/systemd/user
+export USYSDIR=/usr/lib/systemd/system/
 
 cd $HOME
 mkdir -p $USYSDIR
 cd -
-cp systemd_units/kielserver.service $HOME/$USYSDIR
+cp systemd_units/* $USYSDIR
 
-sudo cp target/debug/server /usr/local/bin/kielserver
+sudo cp target/release/server /usr/local/bin/kielserver
+

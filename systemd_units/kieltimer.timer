@@ -1,0 +1,10 @@
+[Unit]
+Description=Run something
+
+[Timer]
+Unit=kieltimer.service
+OnCalendar=*-*-* *:00:00
+
+[Install]
+WantedBy=timers.target
+
