@@ -5,7 +5,7 @@ import sys
 from phue import Bridge
 from dotenv import load_dotenv
 
-load_dotenv("../.env")
+load_dotenv("/etc/kiel.d/.env")
 
 # 00:17:88:01:0b:df:92:fa-0b
 

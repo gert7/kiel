@@ -86,17 +86,19 @@ fn get_power_state_exact(
 
 async fn planner_main() -> eyre::Result<()> {
     let connection = database::establish_connection();
-    let (cfdb, config) = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME)?;
-    let conf_id = match cfdb {
-        Some(cfdb) => Some(cfdb.id),
-        None => None,
-    };
+    // let (cfdb, config) = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME)?;
+    // let conf_id = match cfdb {
+    //     Some(cfdb) => Some(cfdb.id),
+    //     None => None,
+    // };
+    let (conf_id, config) =
+        ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
     println!("conf id {:?}", conf_id);
 
     let now = Utc::now().with_timezone(&PLANNING_TZ);
     let today = now.date();
 
-    let cached_states = PowerStateDB::get_day_from_database(&connection, &today, conf_id)?;
+    let cached_states = PowerStateDB::get_day_from_database(&connection, &today, Some(conf_id))?;
     let exact_known_state = get_power_state_exact(&now, &cached_states);
     println!("Current cached state: {:?}", exact_known_state);
 
@@ -119,7 +121,7 @@ async fn planner_main() -> eyre::Result<()> {
 
             overrides::apply_overrides(&mut strategy_result, &config, &LOCAL_TZ);
 
-            PowerStateDB::insert_day_into_database(&connection, &strategy_result, conf_id);
+            PowerStateDB::insert_day_into_database(&connection, &strategy_result, Some(conf_id));
             for pcu in &strategy_result {
                 println!("{:?}", pcu);
             }
@@ -178,6 +180,7 @@ async fn hour_main() -> eyre::Result<()> {
 #[tokio::main]
 #[doc(hidden)]
 async fn main() -> color_eyre::Result<()> {
+    dotenv::from_path("/etc/kiel.d/.env")?;
     color_eyre::install()?;
 
     let mut lockfile = wait_for_file();
