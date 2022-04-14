@@ -6,7 +6,7 @@ use crate::price_matrix::{DaySlice, PricePerMwh};
 
 use super::{PriceChangeUnit, MaskablePowerStrategy};
 
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub struct SmartStrategy {
     hour_budget: u32,
 }

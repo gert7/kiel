@@ -5,7 +5,7 @@ use serde::Deserialize;
 use super::{HourStrategy, PowerState, PriceChangeUnit};
 use crate::{price_matrix::DaySlice, tariff::Tariff};
 
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub struct TariffStrategy;
 
 impl TariffStrategy {

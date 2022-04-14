@@ -5,23 +5,26 @@ use crate::price_matrix::{DaySlice, PricePerMwh};
 
 use super::{HourStrategy, MaskablePowerStrategy, PowerState, PriceChangeUnit};
 
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub struct PriceLimitStrategy {
     limit_mwh: Decimal,
 }
 
 impl MaskablePowerStrategy for PriceLimitStrategy {
     fn plan_day_masked<'a>(&self, mask: &'a Vec<PriceChangeUnit>) -> Vec<PriceChangeUnit<'a>> {
+        // println!("Running PriceLimitStrategy");
         mask.iter()
             .map(|pcu| match pcu.price {
                 Some(price) => {
                     if price.total().0 > self.limit_mwh {
+                        // println!("Price is too much {}, {}", price.total().0, self.limit_mwh);
                         PriceChangeUnit {
                             moment: price.moment,
                             price: pcu.price,
                             state: PowerState::Off,
                         }
                     } else {
+                        // println!("Price ok");
                         *pcu
                     }
                 }
@@ -36,10 +39,7 @@ mod test {
     use rust_decimal::Decimal;
     use rust_decimal_macros::dec;
 
-    use crate::{
-        sample_data::sample_day_specified,
-        strategy::{default::TariffStrategy},
-    };
+    use crate::{sample_data::sample_day_specified, strategy::default::TariffStrategy};
 
     use super::*;
     const SAMPLE_DAY_PRICES: [Decimal; 8] = [

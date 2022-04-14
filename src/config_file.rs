@@ -17,7 +17,7 @@ use crate::{
     },
 };
 
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 #[serde(tag = "mode")]
 pub enum DayBasePlan {
     AlwaysOff(AlwaysOffStrategy),
@@ -35,7 +35,7 @@ impl DayBasePlan {
     }
 }
 
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 #[serde(tag = "mode")]
 pub enum DayStrategy {
     None(NoneStrategy),
@@ -53,7 +53,7 @@ impl DayStrategy {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Day {
     pub hours_always_on: Option<Vec<u8>>,
     pub hours_always_off: Option<Vec<u8>>,

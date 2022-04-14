@@ -6,7 +6,7 @@ use crate::{price_cell::PriceCell, price_matrix::DaySlice};
 
 use super::{HourStrategy, PowerState, PriceChangeUnit};
 
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub struct AlwaysOnStrategy;
 
 impl HourStrategy for AlwaysOnStrategy {
@@ -26,7 +26,7 @@ impl HourStrategy for AlwaysOnStrategy {
     }
 }
 
-#[derive(Clone, Copy, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub struct AlwaysOffStrategy;
 
 impl HourStrategy for AlwaysOffStrategy {

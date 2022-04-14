@@ -23,6 +23,13 @@ mode = "AlwaysOn"
 
 [thursday]
 
+[thursday.base]
+mode = "AlwaysOn"
+
+[thursday.strategy]
+mode = "Limit"
+limit_mwh = 200.0
+
 [friday]
 
 [saturday]
