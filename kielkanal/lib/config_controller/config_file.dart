@@ -70,7 +70,7 @@ class ConfigFile {
   }
 
   static ConfigFile fromString(String toml) {
-    final decoded = TomlDocument.parse(sampleTOML).toMap();
+    final decoded = TomlDocument.parse(toml).toMap();
     return ConfigFile.fromMap(decoded);
   }
 
@@ -84,6 +84,7 @@ class ConfigFile {
 }
 
 ConfigFile getSample() {
+  print("getting sample...");
   final decoded = TomlDocument.parse(sampleTOML).toMap();
   return ConfigFile.fromMap(decoded);
 }

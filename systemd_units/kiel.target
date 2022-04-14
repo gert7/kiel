@@ -4,3 +4,6 @@ Requires=kieltimer.service
 Requires=kielserver.service
 Requires=kielfetch.service
 
+[Install]
+WantedBy=multi-user.target
+

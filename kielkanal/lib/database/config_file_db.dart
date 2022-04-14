@@ -14,6 +14,7 @@ Future<ConfigFile?> fetchConfigFileFromDatabase(String ip) async {
   } else {
     final tomlText = results.first[tname]?["toml"];
     if(tomlText is String) {
+      print(tomlText);
       return ConfigFile.fromString(tomlText);
     } else {
       return null;

@@ -28,6 +28,7 @@ class _MainScreenDBFilterState extends State<MainScreenDBFilter> {
 
   void loadFromDatabase() async {
     _streamController.add(null);
+    print("Fetching from database");
     final result = await fetchConfigFileFromDatabase(widget.ip);
     _streamController.add(result);
   }
@@ -51,6 +52,7 @@ class _MainScreenDBFilterState extends State<MainScreenDBFilter> {
           initialData: null,
           builder: (BuildContext context, snapshot) {
             final data = snapshot.data;
+            print("Rebuilding MainScreenDBFilter...");
             if (data != null) {
               return MainScreen(widget.ip, data);
             } else {

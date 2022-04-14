@@ -6,8 +6,7 @@ const sampleTOML = """
 
 [monday.strategy]
 mode = "Limit"
-limit_mwh = 180.21
-hour_budget = 9
+limit_mwh = 1
 
 [monday.base]
 mode = "AlwaysOn"
@@ -24,7 +23,7 @@ mode = "AlwaysOn"
 [friday]
 
 [saturday]
-hours_always_on = [12, 13, 14, 15]
+hours_always_on = [1, 2, 3, 4]
 
 [sunday]
 """;

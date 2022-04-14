@@ -113,6 +113,7 @@ class ConfigController extends ChangeNotifier {
   List<ControllerDay> days = [];
 
   ConfigController.fromConfigFile(ConfigFile configFile) {
+    print("fromConfigFile");
     for(final day in configFile.days) {
       final controllerDay = ControllerDay.getDayFromConfig(day);
       controllerDay.addListener(() {
@@ -122,9 +123,9 @@ class ConfigController extends ChangeNotifier {
     }
   }
 
-  static ConfigController fromSampleConfigFile() {
-    return ConfigController.fromConfigFile(getSample());
-  }
+  // static ConfigController fromSampleConfigFile() {
+  //   return ConfigController.fromConfigFile(getSample());
+  // }
 
   ConfigFile toConfigFile() {
     final newDays = days.map((cDay) {

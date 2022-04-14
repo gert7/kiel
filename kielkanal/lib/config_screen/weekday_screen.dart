@@ -37,8 +37,8 @@ class _WeekdayScreenState extends State<WeekdayScreen>
 
   @override
   Widget build(BuildContext context) {
-    final sample = getSample();
-    final back = TomlDocument.fromMap(sample.toMap());
+    // final sample = getSample();
+    // final back = TomlDocument.fromMap(sample.toMap());
 
     return Column(
       children: [
