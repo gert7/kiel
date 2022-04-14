@@ -58,18 +58,6 @@ async fn fetch_main() -> eyre::Result<()> {
     Ok(())
 }
 
-fn get_power_state(datetime: &DateTime<Tz>, states: &Vec<PriceChangeUnit>) -> Option<PowerState> {
-    let mut candidate: Option<PowerState> = None;
-    for pcu in states {
-        if pcu.moment <= *datetime {
-            candidate = Some(pcu.state);
-        } else if pcu.moment > *datetime {
-            break;
-        }
-    }
-    candidate
-}
-
 fn get_power_state_exact(
     datetime: &DateTime<Tz>,
     states: &Vec<PriceChangeUnit>,

@@ -65,12 +65,14 @@ impl PowerStateDB {
                 .filter(moment_utc.ge(&day_start))
                 .filter(moment_utc.lt(&day_end))
                 .filter(configuration_id.eq(conf_id))
+                .order_by(id.desc())
                 .limit(48)
                 .load::<PowerStateDB>(connection)?,
             None => power_states
                 .filter(moment_utc.ge(&day_start))
                 .filter(moment_utc.lt(&day_end))
                 .filter(configuration_id.is_null())
+                .order_by(id.desc())
                 .limit(48)
                 .load::<PowerStateDB>(connection)?,
         };
