@@ -5,5 +5,5 @@ Description=Kiel server Daemon
 ExecStart=/usr/local/bin/kielserver
 
 [Install]
-WantedBy=default.target
+WantedBy=kiel.target
 

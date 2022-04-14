@@ -149,6 +149,7 @@ async fn main() -> color_eyre::Result<()> {
 
     println!("getting");
     let mut lockfile = wait_for_file();
+    println!("file got");
 
     let mut args = std::env::args();
     let second = args.nth(1);
