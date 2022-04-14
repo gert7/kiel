@@ -1,0 +1,10 @@
+[Unit]
+Description=Runs something
+Wants=kieltimer.timer
+
+[Service]
+ExecStart=/home/pi/kieltimer.sh
+
+[Install]
+WantedBy=default.target
+
