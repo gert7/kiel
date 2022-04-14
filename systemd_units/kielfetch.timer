@@ -1,0 +1,10 @@
+[Unit]
+Description=Fetch Kiel data
+
+[Timer]
+Unit=kielfetch.service
+OnCalendar=*-*-* 14,16,21:00:00
+
+[Install]
+WantedBy=timers.target
+

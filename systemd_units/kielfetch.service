@@ -1,0 +1,10 @@
+[Unit]
+Description=Fetches Kiel data
+Requires=kielfetch.timer
+
+[Service]
+ExecStart=/usr/local/bin/kiel --fetch
+
+[Install]
+WantedBy=kiel.target
+

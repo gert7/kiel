@@ -2,4 +2,5 @@
 Description=Kiel units
 Requires=kieltimer.service
 Requires=kielserver.service
+Requires=kielfetch.service
 
