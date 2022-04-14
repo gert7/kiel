@@ -135,9 +135,9 @@ async fn main() -> color_eyre::Result<()> {
     dotenv::from_path("/etc/kiel.d/.env")?;
     color_eyre::install()?;
 
-    println!("getting");
+    println!("[LF] getting");
     let mut lockfile = wait_for_file();
-    println!("file got");
+    println!("[LF] file got");
 
     let mut args = std::env::args();
     let second = args.nth(1);
@@ -146,7 +146,9 @@ async fn main() -> color_eyre::Result<()> {
         None => {
             eprintln!("\nPlease specify an execution mode:");
             eprintln!("  --fetch");
-            eprintln!("  --hour\n");
+            eprintln!("  --hour");
+            eprintln!("  --hour-force");
+            eprintln!("  --reinsert-config [FILENAME]");
             "".to_owned()
         }
     };
@@ -167,6 +169,7 @@ async fn main() -> color_eyre::Result<()> {
         let connection = database::establish_connection();
         let default_toml = std::fs::read_to_string(filename)?;
         ConfigFile::insert_string(&connection, &default_toml)?;
+        planner_main(true).await?;
     } else {
         // let a = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
         eprintln!("Unknown mode: {}", second);

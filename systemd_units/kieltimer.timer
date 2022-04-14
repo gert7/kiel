@@ -4,6 +4,7 @@ Description=Run something
 [Timer]
 Unit=kieltimer.service
 OnCalendar=*-*-* *:00:30
+AccuracySec=1s
 
 [Install]
 WantedBy=timers.target

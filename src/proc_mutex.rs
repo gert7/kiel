@@ -6,9 +6,9 @@ use fs2::FileExt;
 const LOCKFILE_NAME: &str = "/tmp/kiel_lockfile";
 
 pub fn wait_for_file() -> File {
-    println!("wait for file");
+    println!("[LF] wait for file");
     let lockfile_full_name = format!("{}-{}", LOCKFILE_NAME, whoami::username());
-    println!("lockfile full name {}", lockfile_full_name);
+    println!("[LF] lockfile full name {}", lockfile_full_name);
     let lockfile = File::create(&lockfile_full_name);
 
     let lockfile = match lockfile {
