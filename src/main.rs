@@ -180,6 +180,7 @@ async fn hour_main() -> eyre::Result<()> {
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
+    println!("getting");
     let mut lockfile = wait_for_file();
 
     let mut args = std::env::args();
@@ -197,6 +198,7 @@ async fn main() -> color_eyre::Result<()> {
     if second == "--fetch" {
         fetch_main().await?;
     } else if second == "--hour" {
+        println!("Fetcheth");
         // hour_main().await?;
         planner_main().await?;
     } else {

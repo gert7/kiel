@@ -8,4 +8,5 @@ cd -
 cp systemd_units/* $USYSDIR
 
 sudo cp target/release/server /usr/local/bin/kielserver
+sudo cp target/release/kiel /usr/local/bin/kiel
 
