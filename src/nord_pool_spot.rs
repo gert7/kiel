@@ -3,7 +3,6 @@ use std::{env, num::ParseIntError, str::FromStr, time::Duration};
 use chrono::{Date, DateTime, TimeZone};
 use chrono_tz::Tz;
 use color_eyre::eyre::{self, eyre};
-use dotenv::dotenv;
 use rust_decimal::Decimal;
 use thirtyfour::{prelude::ElementQueryable, By, DesiredCapabilities, WebDriver, WebElement};
 
@@ -153,7 +152,6 @@ async fn retrieve_prices(driver: &WebDriver) -> eyre::Result<PriceMatrix> {
 }
 
 pub async fn fetch_prices_from_nord_pool() -> eyre::Result<PriceMatrix> {
-    dotenv().ok();
     let mut caps = DesiredCapabilities::chrome();
     caps.add_chrome_arg("--enable-automation")?;
     let driver_uri = env::var("WEBDRIVER_URI").expect("No WebDriver URI set!");

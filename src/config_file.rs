@@ -202,6 +202,43 @@ impl ConfigFile {
             )),
         }
     }
+
+    pub fn insert_string(connection: &PgConnection, file_string: &str) -> eyre::Result<i32> {
+        use crate::schema::day_configurations::dsl::*;
+        let conf_id: Vec<i32> = diesel::insert_into(day_configurations)
+            .values(NewConfigFileDB {
+                toml: file_string,
+                known_broken: false,
+                tried: false,
+            })
+            .returning(id)
+            .get_results(connection)?;
+        Ok(*conf_id
+            .get(0)
+            .expect("Unable to insert default configuration into database"))
+    }
+
+    pub fn fetch_with_default_inserting(
+        connection: &PgConnection,
+        default_filename: &str,
+    ) -> eyre::Result<(i32, ConfigFile)> {
+        let result = ConfigFile::fetch_from_database(connection);
+        if result.is_ok() {
+            println!("Found configuration in database");
+        }
+        match result {
+            Ok(cf) => Ok((cf.0.id, cf.1)),
+            Err(_) => {
+                let toml = std::fs::read_to_string(default_filename)?;
+                let id = ConfigFile::insert_string(connection, &toml)?;
+                Ok((
+                    id,
+                    ConfigFile::decode_file(default_filename)
+                        .expect("No configuration file found!"),
+                ))
+            }
+        }
+    }
 }
 
 #[derive(Queryable)]

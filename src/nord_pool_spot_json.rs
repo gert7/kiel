@@ -1,7 +1,6 @@
 use std::{collections::BTreeMap, env}; 
 use color_eyre::eyre;
 use color_eyre::eyre::eyre;
-use dotenv::dotenv;
 use json::JsonValue;
 
 use crate::{
@@ -64,7 +63,6 @@ pub fn decode_json(body: &str) -> eyre::Result<PriceMatrix> {
 }
 
 pub async fn fetch_json_from_nord_pool() -> eyre::Result<PriceMatrix> {
-    dotenv().ok();
     let body = reqwest::get(env::var("JSON_URI")?).await?.text().await?;
     // let mut requestjson = File::create("out.json")?;
     // requestjson.write_all(&body.as_bytes())?;
