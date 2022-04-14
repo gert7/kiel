@@ -6,6 +6,8 @@ sudo systemctl stop kiel.target
 sudo systemctl stop kielserver.service
 sudo systemctl stop kieltimer.timer
 sudo systemctl stop kieltimer.service
+sudo systemctl stop kielfetch.timer
+sudo systemctl stop kielfetch.service
 
 cd $HOME
 mkdir -p $USYSDIR
@@ -21,5 +23,5 @@ sudo mkdir -p /etc/kiel.d
 sudo cp default.toml /etc/kiel.d/default.toml
 sudo cp .env /etc/kiel.d/.env
 
-sudo systemctl start kiel.target
+echo "Units installed. Execute 'sudo systemctl start kiel.target' to start services."
 

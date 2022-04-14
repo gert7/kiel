@@ -161,9 +161,11 @@ async fn main() -> color_eyre::Result<()> {
         println!("Forcing recalculation...");
         planner_main(true).await?;
     } else if second == "--reinsert-config" {
-        println!("Reinserting crate-local configuration");
+        let third = std::env::args().nth(2);
+        let filename = third.unwrap_or("default.toml".to_owned());
+        println!("Reinserting crate-local configuration: {}", filename);
         let connection = database::establish_connection();
-        let default_toml = std::fs::read_to_string("default.toml")?;
+        let default_toml = std::fs::read_to_string(filename)?;
         ConfigFile::insert_string(&connection, &default_toml)?;
     } else {
         // let a = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
