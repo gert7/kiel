@@ -81,10 +81,10 @@ class MainScreen extends StatefulWidget {
 
   const MainScreen(this.ip, this.configFile, {Key? key}) : super(key: key);
 
-  static const List _options = <Widget>[
-    ConfigScreen(),
-    DayScreen(),
-    ConfigScreen()
+  List get options => <Widget>[
+    const ConfigScreen(),
+    DayScreen(ip),
+    const ConfigScreen()
   ];
 
   @override
@@ -106,7 +106,7 @@ class _MainScreenState extends State<MainScreen> {
           ConfigController.fromConfigFile(widget.configFile),
       child: SafeArea(
         child: Scaffold(
-          body: MainScreen._options[_selectedItem],
+          body: widget.options[_selectedItem],
           bottomNavigationBar: BottomNavigationBar(
             items: const <BottomNavigationBarItem>[
               BottomNavigationBarItem(
