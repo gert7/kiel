@@ -51,17 +51,24 @@ class _ConfigScreenState extends State<ConfigScreen> {
             itemCount: ConfigScreen.days.length,
             itemBuilder: (BuildContext context, int i) {
               final day = ConfigScreen.days[i];
-              return Card(
-                  child: InkWell(
-                      splashColor: cardYellow,
-                      onTap: () => openDay(i),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          day.toUpperCase(),
-                          style: GoogleFonts.secularOne(fontSize: 32),
-                        ),
-                      )));
+              return Consumer<ConfigController>(
+                builder: (context, controller, child) {
+                  final dayIsValid = controller.day(i).isValid();
+
+                  return Card(
+                    color: dayIsValid ? null : Colors.redAccent,
+                      child: InkWell(
+                          splashColor: cardYellow,
+                          onTap: () => openDay(i),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              day.toUpperCase(),
+                              style: GoogleFonts.secularOne(fontSize: 32),
+                            ),
+                          )));
+                },
+              );
             }),
       ),
     );
@@ -146,11 +153,11 @@ class _ConfigScreenState extends State<ConfigScreen> {
                             );
                           });
                       if (copyResult != null) {
-                        if(copyResult.day >= 0 && copyResult.day < 7) {
+                        if (copyResult.day >= 0 && copyResult.day < 7) {
                           controller.copyDayOver(selectedDay, copyResult.day);
-                        } else if(copyResult.day == -2) {
+                        } else if (copyResult.day == -2) {
                           for (int i = 0; i < 5; i++) {
-                            if(i != selectedDay) {
+                            if (i != selectedDay) {
                               controller.copyDayOver(selectedDay, i);
                             }
                           }
@@ -166,6 +173,13 @@ class _ConfigScreenState extends State<ConfigScreen> {
         Expanded(child: WeekdayScreen(selectedDay))
       ],
     );
+  }
+
+  void confirmButtonAction(ConfigController controller) {
+    final map = controller.toMap();
+    final toml = TomlDocument.fromMap(map);
+    print(toml);
+    ReloadNotification("Kinnitan muudatused").dispatch(context);
   }
 
   @override
@@ -191,19 +205,16 @@ class _ConfigScreenState extends State<ConfigScreen> {
         ),
         Consumer<ConfigController>(
           builder: (context, controller, child) {
+            final valid = controller.isValid();
+
             return Padding(
               padding: const EdgeInsets.all(8.0),
               child: SizedBox(
                   height: 64,
                   width: double.infinity,
                   child: ElevatedButton(
-                      onPressed: () {
-                        final map = controller.toMap();
-                        final toml = TomlDocument.fromMap(map);
-                        print(toml);
-                        ReloadNotification("Kinnitan muudatused")
-                            .dispatch(context);
-                      },
+                      onPressed:
+                          valid ? () => confirmButtonAction(controller) : null,
                       child: const Text("Kinnita muudatused"))),
             );
           },

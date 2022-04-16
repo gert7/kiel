@@ -12,6 +12,8 @@ abstract class ConfigControllerInput {
 
   ConfigControllerInput clone(
       ConfigControllerInput original, Function() notify);
+
+  bool isValid();
 }
 
 class ConfigControllerTextInput extends ConfigControllerInput {
@@ -19,13 +21,20 @@ class ConfigControllerTextInput extends ConfigControllerInput {
 
   final TextEditingController controller;
 
-  ConfigControllerTextInput(SchemaItem schema, this.textInput, this.controller)
-      : super(schema);
+  bool _isValid = false;
 
-  bool isValid() {
-    print("Validating on: ${controller.text}");
-    return textInput.isValid(controller.text);
+  ConfigControllerTextInput(SchemaItem schema, this.textInput, this.controller)
+      : super(schema) {
+    _validate();
+    controller.addListener(_validate);
   }
+
+  void _validate() {
+    _isValid = textInput.isValid(controller.text);
+  }
+
+  @override
+  bool isValid() => _isValid;
 
   @override
   ConfigControllerInput clone(
@@ -55,16 +64,12 @@ class ControllerDay extends ChangeNotifier {
   List<ConfigControllerInput> baseItems = [];
 
   late StrategyMode strategyMode;
-  List<SchemaItem>? strategySchema;
   List<ConfigControllerInput> strategyItems = [];
 
   void populateStrategySchema(StrategyMode? mode, bool initial) {
     strategyItems = [];
 
-    strategySchema = getSchemaByStrategyType(strategyMode);
-    final schema = strategySchema;
-    print(schema);
-    print(strategyMode);
+    final schema = getSchemaByStrategyType(strategyMode);
     if (schema != null) {
       for (final item in schema) {
         final input = item.input;
@@ -113,6 +118,12 @@ class ControllerDay extends ChangeNotifier {
     }
   }
 
+  bool isValid() {
+    final baseItemsInvalid = baseItems.any((element) => !element.isValid());
+    final strategyItemsInvalid = strategyItems.any((element) => !element.isValid());
+    return !(baseItemsInvalid || strategyItemsInvalid);
+  }
+
   ControllerDay.clone(ControllerDay original)
       : day = original.day,
         hoursAlwaysOn = original.hoursAlwaysOn.map((e) => e).toList(),
@@ -120,8 +131,7 @@ class ControllerDay extends ChangeNotifier {
         baseMode = original.baseMode,
         strategyMode = original.strategyMode,
         // TODO: change if base items ever get options
-        baseItems = [],
-        strategySchema = original.strategySchema {
+        baseItems = [] {
     strategyItems =
         original.strategyItems.map((e) => e.clone(e, notifyListeners)).toList();
   }
@@ -161,6 +171,10 @@ class ConfigController extends ChangeNotifier {
     _days[toDay] = ControllerDay.clone(_days[fromDay]);
     _days[toDay].addListener(notifyListeners);
     notifyListeners();
+  }
+
+  bool isValid() {
+    return !_days.any((element) => !element.isValid());
   }
 
   // static ConfigController fromSampleConfigFile() {

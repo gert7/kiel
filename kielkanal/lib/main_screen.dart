@@ -95,7 +95,6 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedItem = 0;
 
   void selectItem(int i) {
-    print("selected $i");
     setState(() => _selectedItem = i);
   }
 
