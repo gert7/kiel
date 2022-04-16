@@ -77,7 +77,7 @@ class ConfigFile {
   Map toMap() {
     final map = {};
     for(int i = 0; i < days.length; i++) {
-      map[dayNamesEnglish[i]] = days[i].toMap();
+      map[dayNamesEnglish[i].toLowerCase()] = days[i].toMap();
     }
     return map;
   }

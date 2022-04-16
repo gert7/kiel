@@ -1,4 +1,18 @@
 use warp::Filter;
+use std::process::Command;
+
+fn execute_hour() {
+    let output = Command::new("/usr/local/bin/kiel")
+        .arg("--hour-force")
+        .output();
+    match output {
+        Err(e) => {
+            eprintln!("{}", e);
+        }
+        // Ok(out) => println!("{:?}", out),
+        _ => (),
+    }
+}
 
 #[tokio::main]
 async fn main() {
@@ -10,8 +24,11 @@ async fn main() {
             println!("Kiel service request received!");
             format!("Kiel says hello, {}!", name)
         });
-    let world = warp::path!("world" / String)
-        .map(|name| format!("{}, world!", name));
+    let world = warp::path!("hour")
+        .map(|| {
+            execute_hour();
+            format!("Hour executed")
+        });
     
     let routes = warp::get().and(
         hello

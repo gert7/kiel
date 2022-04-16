@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:kielkanal/config_screen/config_screen.dart';
 import 'package:kielkanal/database/config_file_db.dart';
 import 'package:provider/provider.dart';
+import 'package:toml/toml.dart';
 
 import 'config_controller/config_controller.dart';
 import 'config_controller/config_file.dart';
@@ -11,7 +12,9 @@ import 'day_screen/day_screen.dart';
 
 class ReloadNotification extends Notification {
   final String message;
-  ReloadNotification(this.message);
+  final TomlDocument? toml;
+
+  ReloadNotification(this.message, this.toml);
 }
 
 class MainScreenDBFilter extends StatefulWidget {
@@ -33,6 +36,13 @@ class _MainScreenDBFilterState extends State<MainScreenDBFilter> {
     _streamController.add(result);
   }
 
+  void sendOffConfiguration(TomlDocument toml) async {
+    _streamController.add(null);
+    await sendConfigFileToDatabase(widget.ip, toml);
+    final result = await fetchConfigFileFromDatabase(widget.ip);
+    _streamController.add(result);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -43,8 +53,15 @@ class _MainScreenDBFilterState extends State<MainScreenDBFilter> {
   Widget build(BuildContext context) {
     return NotificationListener<ReloadNotification>(
       onNotification: (notification) {
-        _streamController.add(null);
-        loadingString = notification.message;
+        final toml = notification.toml;
+
+        if(toml != null) {
+          loadingString = notification.message;
+          sendOffConfiguration(toml);
+        } else {
+          loadFromDatabase();
+        }
+
         return true;
       },
       child: StreamBuilder<ConfigFile?>(
