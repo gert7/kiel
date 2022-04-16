@@ -11,7 +11,7 @@ class WeeklyOverrideWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ConfigController>(
       builder: (context, controller, child) {
-        final day = controller.days[dayNumber];
+        final day = controller.day(dayNumber);
         final bigStyle = Theme.of(context).textTheme.headline4;
 
         final children = <Widget>[];
@@ -28,13 +28,13 @@ class WeeklyOverrideWidget extends StatelessWidget {
               duration: const Duration(milliseconds: 200),
               color: color,
               child: InkWell(
-                  onTap: () => day.cycleHour(hour),
+                  onTap: () => controller.cycleHour(dayNumber, hour),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Center(
                           child: Text(
-                        hour.toString(),
+                        "$hour",
                         style: bigStyle,
                       ))
                     ],

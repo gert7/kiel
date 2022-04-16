@@ -29,8 +29,8 @@ class KielForm extends StatelessWidget {
 
   static const padding = 16.0;
 
-  Widget rubricDropDown<M>(BuildContext context, ControllerDay day, M value,
-      String title, Function(M) change, Map<M, String> enumMap) {
+  Widget rubricDropDown<M>(BuildContext context, int dayIndex, M value,
+      String title, Function(int, M) change, Map<M, String> enumMap) {
     final textTheme = Theme.of(context).textTheme.titleLarge;
 
     return Row(
@@ -59,7 +59,7 @@ class KielForm extends StatelessWidget {
               .values
               .toList(),
           onChanged: (M? newValue) {
-            if (newValue != null) change(newValue);
+            if (newValue != null) change(dayIndex, newValue);
           },
         ))
       ],
@@ -97,20 +97,20 @@ class KielForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<ConfigControllerInput> list = [];
-
     return Consumer<ConfigController>(builder: (context, controller, child) {
-      final day = controller.days[dayNumber];
+      List<ConfigControllerInput> list = [];
+      print("Rebuilding KielForm");
+      final day = controller.day(dayNumber);
       final rows = <Widget>[];
 
       if (rubric == KielFormType.base) {
         list = day.baseItems;
         rows.add(rubricDropDown(
-            context, day, day.baseMode, "Alused", day.selectBase, bases));
+            context, dayNumber, day.baseMode, "Alused", controller.selectBase, bases));
       } else if (rubric == KielFormType.strategy) {
         list = day.strategyItems;
-        rows.add(rubricDropDown(context, day, day.strategyMode, "Strateegia",
-            day.selectStrategy, strategies));
+        rows.add(rubricDropDown(context, dayNumber, day.strategyMode, "Strateegia",
+            controller.selectStrategy, strategies));
       }
 
       for (final input in list) {

@@ -9,6 +9,9 @@ abstract class ConfigControllerInput {
   final SchemaItem schema;
 
   ConfigControllerInput(this.schema);
+
+  ConfigControllerInput clone(
+      ConfigControllerInput original, Function() notify);
 }
 
 class ConfigControllerTextInput extends ConfigControllerInput {
@@ -22,6 +25,24 @@ class ConfigControllerTextInput extends ConfigControllerInput {
   bool isValid() {
     print("Validating on: ${controller.text}");
     return textInput.isValid(controller.text);
+  }
+
+  @override
+  ConfigControllerInput clone(
+      ConfigControllerInput original, Function() notify) {
+    var textValue = "";
+    if (original is ConfigControllerTextInput) {
+      textValue = original.controller.text;
+    }
+    final controller =
+        TextEditingController.fromValue(TextEditingValue(text: textValue));
+    controller.addListener(() {
+      print(controller.text);
+      print("reckoning");
+      notify();
+    });
+    print("cloning $textInput");
+    return ConfigControllerTextInput(schema, textInput, controller);
   }
 }
 
@@ -37,7 +58,7 @@ class ControllerDay extends ChangeNotifier {
   List<SchemaItem>? strategySchema;
   List<ConfigControllerInput> strategyItems = [];
 
-  void populateStrategySchema(StrategyMode? mode) {
+  void populateStrategySchema(StrategyMode? mode, bool initial) {
     strategyItems = [];
 
     strategySchema = getSchemaByStrategyType(strategyMode);
@@ -48,20 +69,18 @@ class ControllerDay extends ChangeNotifier {
       for (final item in schema) {
         final input = item.input;
         if (input is KielTextInput) {
-          final value = day.strategy?.map[item.tomlName];
           String textValue = "";
-          if(value is double) {
-            textValue = value.toString().replaceAll(".", ",");
-          } else if (value is int) {
-            textValue = value.toString();
+          if (initial) {
+            final value = day.strategy?.map[item.tomlName];
+            if (value is double) {
+              textValue = value.toString().replaceAll(".", ",");
+            } else if (value is int) {
+              textValue = value.toString();
+            }
           }
           final controller = TextEditingController.fromValue(
               TextEditingValue(text: textValue));
-          controller.addListener(() {
-            final String text = controller.text;
-            print(text);
-            notifyListeners();
-          });
+          controller.addListener(notifyListeners);
           final cci = ConfigControllerTextInput(item, input, controller);
           strategyItems.add(cci);
         }
@@ -77,26 +96,12 @@ class ControllerDay extends ChangeNotifier {
 
     strategyMode = day.strategy?.mode ?? StrategyMode.None;
 
-    populateStrategySchema(strategyMode);
-  }
-
-  void selectBase(BaseMode mode) {
-    baseMode = mode;
-    notifyListeners();
-  }
-
-  void selectStrategy(StrategyMode mode) {
-    print("selecting strategy");
-    strategyMode = mode;
-    print("populating strategy");
-    populateStrategySchema(mode);
-    print("notifying");
-    notifyListeners();
+    populateStrategySchema(strategyMode, true);
   }
 
   void cycleHour(int hour) {
     if (hour >= 0 && hour <= 23) {
-      if(hoursAlwaysOn.contains(hour)) {
+      if (hoursAlwaysOn.contains(hour)) {
         hoursAlwaysOn.remove(hour);
         hoursAlwaysOff.add(hour);
       } else if (hoursAlwaysOff.contains(hour)) {
@@ -107,20 +112,55 @@ class ControllerDay extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  ControllerDay.clone(ControllerDay original)
+      : day = original.day,
+        hoursAlwaysOn = original.hoursAlwaysOn.map((e) => e).toList(),
+        hoursAlwaysOff = original.hoursAlwaysOff.map((e) => e).toList(),
+        baseMode = original.baseMode,
+        strategyMode = original.strategyMode,
+        // TODO: change if base items ever get options
+        baseItems = [],
+        strategySchema = original.strategySchema {
+    strategyItems =
+        original.strategyItems.map((e) => e.clone(e, notifyListeners)).toList();
+  }
 }
 
 class ConfigController extends ChangeNotifier {
-  List<ControllerDay> days = [];
+  final List<ControllerDay> _days = [];
+
+  ControllerDay day(int index) {
+    return _days[index];
+  }
+
+  void selectBase(int day, BaseMode mode) {
+    _days[day].baseMode = mode;
+    notifyListeners();
+  }
+
+  void selectStrategy(int day, StrategyMode mode) {
+    _days[day].strategyMode = mode;
+    _days[day].populateStrategySchema(mode, false);
+    notifyListeners();
+  }
+
+  void cycleHour(int day, int hour) {
+    _days[day].cycleHour(hour);
+  }
 
   ConfigController.fromConfigFile(ConfigFile configFile) {
-    print("fromConfigFile");
-    for(final day in configFile.days) {
+    for (final day in configFile.days) {
       final controllerDay = ControllerDay.getDayFromConfig(day);
-      controllerDay.addListener(() {
-        notifyListeners();
-      });
-      days.add(controllerDay);
+      controllerDay.addListener(notifyListeners);
+      _days.add(controllerDay);
     }
+  }
+
+  void copyDayOver(int fromDay, int toDay) {
+    _days[toDay] = ControllerDay.clone(_days[fromDay]);
+    _days[toDay].addListener(notifyListeners);
+    notifyListeners();
   }
 
   // static ConfigController fromSampleConfigFile() {
@@ -128,9 +168,10 @@ class ConfigController extends ChangeNotifier {
   // }
 
   ConfigFile toConfigFile() {
-    final newDays = days.map((cDay) {
+    final newDays = _days.map((cDay) {
       final base = Base(cDay.baseMode);
-      final strategy = strategyFromInputs(cDay.strategyMode, cDay.strategyItems);
+      final strategy =
+          strategyFromInputs(cDay.strategyMode, cDay.strategyItems);
       return ConfigDay(cDay.hoursAlwaysOn, cDay.hoursAlwaysOff, base, strategy);
     }).toList();
     return ConfigFile(newDays);

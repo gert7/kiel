@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kielkanal/config_controller/config_controller.dart';
+import 'package:kielkanal/config_screen/copy_request.dart';
 import 'package:kielkanal/config_screen/weekday_screen.dart';
 import 'package:kielkanal/main_screen.dart';
 import 'package:provider/provider.dart';
@@ -66,7 +67,22 @@ class _ConfigScreenState extends State<ConfigScreen> {
     );
   }
 
-  Widget dayForm(int i) {
+  Widget dayLine(String name, Function() callback, {double fontSize = 24}) {
+    return InkWell(
+      onTap: callback,
+      child: SizedBox(
+        width: double.infinity,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Center(
+              child: Text(name,
+                  style: GoogleFonts.secularOne(fontSize: fontSize))),
+        ),
+      ),
+    );
+  }
+
+  Widget dayForm(BuildContext context, int dayNumber) {
     return Column(
       children: [
         Row(
@@ -92,9 +108,57 @@ class _ConfigScreenState extends State<ConfigScreen> {
             Expanded(
                 child: Align(
               alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: const Icon(Icons.copy),
-                onPressed: () {},
+              child: Consumer<ConfigController>(
+                builder: (context, controller, child) {
+                  return IconButton(
+                    icon: const Icon(Icons.copy),
+                    onPressed: () async {
+                      final copyResult = await showDialog<CopyRequest>(
+                          context: context,
+                          builder: (context) {
+                            final dayLinks = [];
+                            for (int i = 0; i < ConfigScreen.days.length; i++) {
+                              dayLinks.add(dayLine(
+                                  ConfigScreen.days[i],
+                                  () =>
+                                      Navigator.pop(context, CopyRequest(i))));
+                            }
+
+                            return Dialog(
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Padding(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: Text("Kopeeri sätted:",
+                                          style: TextStyle(fontSize: 18)),
+                                    ),
+                                    dayLine(
+                                        "Kõik argipäevad",
+                                        () => Navigator.pop(
+                                            context, CopyRequest(-2))),
+                                    const Divider(),
+                                    ...dayLinks
+                                  ],
+                                ),
+                              ),
+                            );
+                          });
+                      if (copyResult != null) {
+                        if(copyResult.day >= 0 && copyResult.day < 7) {
+                          controller.copyDayOver(selectedDay, copyResult.day);
+                        } else if(copyResult.day == -2) {
+                          for (int i = 0; i < 5; i++) {
+                            if(i != selectedDay) {
+                              controller.copyDayOver(selectedDay, i);
+                            }
+                          }
+                        }
+                      }
+                    },
+                  );
+                },
               ),
             ))
           ],
@@ -115,7 +179,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
             children: [
               IgnorePointer(
                 ignoring: selectorOpen,
-                child: dayForm(selectedDay),
+                child: dayForm(context, selectedDay),
               ),
               AnimatedPositioned(
                   duration: const Duration(milliseconds: 500),
@@ -132,12 +196,15 @@ class _ConfigScreenState extends State<ConfigScreen> {
               child: SizedBox(
                   height: 64,
                   width: double.infinity,
-                  child: ElevatedButton(onPressed: () {
-                    final map = controller.toMap();
-                    final toml = TomlDocument.fromMap(map);
-                    print(toml);
-                    ReloadNotification("Kinnitan muudatused").dispatch(context);
-                  }, child: const Text("Kinnita muudatused"))),
+                  child: ElevatedButton(
+                      onPressed: () {
+                        final map = controller.toMap();
+                        final toml = TomlDocument.fromMap(map);
+                        print(toml);
+                        ReloadNotification("Kinnitan muudatused")
+                            .dispatch(context);
+                      },
+                      child: const Text("Kinnita muudatused"))),
             );
           },
         ),
