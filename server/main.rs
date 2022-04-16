@@ -9,8 +9,8 @@ fn execute_hour() {
         Err(e) => {
             eprintln!("{}", e);
         }
-        // Ok(out) => println!("{:?}", out),
-        _ => (),
+        Ok(out) => println!("{:?}", out),
+        // _ => (),
     }
 }
 
@@ -26,6 +26,7 @@ async fn main() {
         });
     let world = warp::path!("hour")
         .map(|| {
+            println!("Hour executed");
             execute_hour();
             format!("Hour executed")
         });

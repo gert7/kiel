@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:kielkanal/config_controller/config_file.dart';
@@ -37,11 +38,17 @@ Future<bool> sendConfigFileToDatabase(String ip, TomlDocument toml) async {
       "INSERT INTO $tname (toml, known_broken, tried) VALUES (@tString, FALSE, FALSE)",
       substitutionValues: {"tString": tomlString});
   print(results);
-  
+
   final client = HttpClient();
   try {
-    await client.get(ip, 8196, "hour");
+    final request = await client.get(ip, 8196, "hour");
+    final response = await request.close();
+    final stringData = await response.transform(utf8.decoder).join();
+    print(stringData);
+
+    print("hour gotten");
   } catch (e) {
+    print("Erroir");
     return false;
   }
 
