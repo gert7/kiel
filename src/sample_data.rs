@@ -32,6 +32,8 @@ where
     DaySlice(vec)
 }
 
+/// Produces sample day based on static array of decimals.
+/// Tariff will be None
 pub fn sample_day_specified(prices: &'static [Decimal], start_hour: u32) -> DaySlice {
     let mut vec = vec![];
     let start_dt = Berlin.ymd(2022, 3, 21).and_hms(start_hour, 0, 0);

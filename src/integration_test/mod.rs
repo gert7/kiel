@@ -70,7 +70,11 @@ mod tests {
             assert!(strategy_result[h].state == PowerState::On);
         }
 
-        let cached_states = PowerStateDB::get_day_from_database(&connection, &start_date, Some(cfdb_id)).unwrap();
+        let mut cached_states = PowerStateDB::get_day_from_database(&connection, &start_date, Some(cfdb_id)).unwrap();
+
+        println!("{:?}", cached_states);
+
+        cached_states.sort_by(|a, b| a.moment.cmp(&b.moment));
 
         for h in 0..=13 {
             println!("{}", h);

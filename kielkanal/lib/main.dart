@@ -16,7 +16,7 @@ class IPCheckResult {
   IPCheckResult(this.ip, this.result);
 }
 
-Future<IPCheckResult> ipIsValid(String ip) async {
+Future<IPCheckResult> ipIsValid(String ip, {BuildContext? context}) async {
   const testString = "world";
 
   final client = HttpClient();
@@ -33,6 +33,12 @@ Future<IPCheckResult> ipIsValid(String ip) async {
     }
   } catch (e) {
     print(e);
+    if(context != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.toString()),
+      ));
+    }
+
     return IPCheckResult(ip, false);
   }
 }
@@ -130,7 +136,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               ElevatedButton(
                   onPressed: () async {
-                    _ipStreamController.add(await ipIsValid(_ipController.text));
+                    _ipStreamController.add(await ipIsValid(_ipController.text, context: context));
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),

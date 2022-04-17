@@ -6,9 +6,9 @@ use crate::{constants::HOURS_OF_DAY, price_cell::PriceCell, price_matrix::DaySli
 pub mod always;
 pub mod default;
 pub mod limit;
-pub mod smart;
-pub mod power_state_model;
 pub mod none;
+pub mod power_state_model;
+pub mod smart;
 
 // pub use default::{DefaultStrategy, DefaultStrategyExclSunday};
 
@@ -25,6 +25,16 @@ pub struct PriceChangeUnit<'a> {
     pub state: PowerState,
 }
 
+impl<'a> PriceChangeUnit<'a> {
+    pub fn clone_with_power_state(&self, state: PowerState) -> PriceChangeUnit<'a> {
+        PriceChangeUnit {
+            moment: self.moment,
+            price: self.price,
+            state,
+        }
+    }
+}
+
 /// A power switching strategy simple enough
 /// to only provide a power state for a single hour
 /// with no price information provided. Intended for
@@ -37,7 +47,11 @@ pub trait HourStrategy {
     /// Plans a day and fills any missing hours with the
     /// result that the strategy provides. Takes a day
     /// running from 0-23 hours.
-    fn plan_day_full<'a>(&self, day_prices: &'a DaySlice, date: &Date<Tz>) -> Vec<PriceChangeUnit<'a>> {
+    fn plan_day_full<'a>(
+        &self,
+        day_prices: &'a DaySlice,
+        date: &Date<Tz>,
+    ) -> Vec<PriceChangeUnit<'a>> {
         let mut vec = self.plan_day(day_prices);
         for hour in HOURS_OF_DAY {
             let hour: u32 = hour.into();

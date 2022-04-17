@@ -56,6 +56,10 @@ class EMWhInput extends KielTextInput {
 }
 
 class HourInput extends KielTextInput {
+  final int? hourLimit;
+
+  HourInput({this.hourLimit});
+
   @override
   List<TextInputFormatter> getFormatters() {
     return [
@@ -69,8 +73,9 @@ class HourInput extends KielTextInput {
   @override
   bool isValid(String t) {
     final h = int.tryParse(t);
+    final limit = hourLimit ?? 24;
     if(h != null) {
-      if(h > 24) {
+      if(h > limit) {
         return false;
       }
     } else {
