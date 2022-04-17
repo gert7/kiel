@@ -100,7 +100,7 @@ class MainScreen extends StatefulWidget {
 
   List get options => <Widget>[
     const ConfigScreen(),
-    DayScreen(ip),
+    DayScreenFront(ip),
     const ConfigScreen()
   ];
 

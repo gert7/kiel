@@ -56,7 +56,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   final dayIsValid = controller.day(i).isValid();
 
                   return Card(
-                    color: dayIsValid ? null : Colors.redAccent,
+                      color: dayIsValid ? null : Colors.redAccent,
                       child: InkWell(
                           splashColor: cardYellow,
                           onTap: () => openDay(i),
@@ -142,6 +142,10 @@ class _ConfigScreenState extends State<ConfigScreen> {
                                           style: TextStyle(fontSize: 18)),
                                     ),
                                     dayLine(
+                                        "Kõik päevad",
+                                        () => Navigator.pop(
+                                            context, CopyRequest(-3))),
+                                    dayLine(
                                         "Kõik argipäevad",
                                         () => Navigator.pop(
                                             context, CopyRequest(-2))),
@@ -157,6 +161,12 @@ class _ConfigScreenState extends State<ConfigScreen> {
                           controller.copyDayOver(selectedDay, copyResult.day);
                         } else if (copyResult.day == -2) {
                           for (int i = 0; i < 5; i++) {
+                            if (i != selectedDay) {
+                              controller.copyDayOver(selectedDay, i);
+                            }
+                          }
+                        } else if (copyResult.day == -3) {
+                          for (int i = 0; i < 7; i++) {
                             if (i != selectedDay) {
                               controller.copyDayOver(selectedDay, i);
                             }

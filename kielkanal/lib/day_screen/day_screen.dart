@@ -25,8 +25,55 @@ String getMonthName(int month) {
   return months[month - 1];
 }
 
+class DayScreenFront extends StatefulWidget {
+  final String ip;
+  const DayScreenFront(this.ip, {Key? key}) : super(key: key);
+
+  @override
+  State<DayScreenFront> createState() => _DayScreenFrontState();
+}
+
+class _DayScreenFrontState extends State<DayScreenFront> with SingleTickerProviderStateMixin {
+  static const tabs = <Tab>[
+    Tab(
+      text: "Täna",
+    ),
+    Tab(
+      text: "Homme",
+    )
+  ];
+
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: tabs.length, vsync: this);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TabBar(
+          tabs: tabs,
+          controller: _tabController,
+          labelColor: Colors.black,
+        ),
+        Expanded(
+          child: TabBarView(controller: _tabController, children: [
+            DayScreen(widget.ip, 0),
+            DayScreen(widget.ip, 1),
+          ]),
+        ),
+      ],
+    );
+  }
+}
+
 class DayScreen extends StatelessWidget {
   final _daySummaryStream = StreamController<DaySummary>();
+  final int daysOffset;
 
   static const rowStyleBold =
       TextStyle(fontSize: 16, fontWeight: FontWeight.bold);
@@ -45,7 +92,7 @@ class DayScreen extends StatelessWidget {
     _daySummaryStream.add(DaySummary(states, prices));
   }
 
-  DayScreen(String ip, {Key? key}) : super(key: key) {
+  DayScreen(String ip, this.daysOffset, {Key? key}) : super(key: key) {
     loadData(ip);
   }
 
@@ -62,7 +109,7 @@ class DayScreen extends StatelessWidget {
 
   List<DataRow> getRowsToday(DaySummary summary) {
     final rows = <DataRow>[];
-    final now = DateTime.now();
+    final now = DateTime.now().add(Duration(days: daysOffset));
     final marketDayStart =
         TZDateTime(marketTimeZone(), now.year, now.month, now.day);
 

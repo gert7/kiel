@@ -97,33 +97,35 @@ class KielForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ConfigController>(builder: (context, controller, child) {
-      List<ConfigControllerInput> list = [];
-      print("Rebuilding KielForm");
-      final day = controller.day(dayNumber);
-      final rows = <Widget>[];
+    return SingleChildScrollView(
+      child: Consumer<ConfigController>(builder: (context, controller, child) {
+        List<ConfigControllerInput> list = [];
+        print("Rebuilding KielForm");
+        final day = controller.day(dayNumber);
+        final rows = <Widget>[];
 
-      if (rubric == KielFormType.base) {
-        list = day.baseItems;
-        rows.add(rubricDropDown(
-            context, dayNumber, day.baseMode, "Alused", controller.selectBase, bases));
-      } else if (rubric == KielFormType.strategy) {
-        list = day.strategyItems;
-        rows.add(rubricDropDown(context, dayNumber, day.strategyMode, "Strateegia",
-            controller.selectStrategy, strategies));
-      }
-
-      for (final input in list) {
-        if (input is ConfigControllerTextInput) {
-          rows.add(textLine(context, input));
+        if (rubric == KielFormType.base) {
+          list = day.baseItems;
+          rows.add(rubricDropDown(
+              context, dayNumber, day.baseMode, "Alused", controller.selectBase, bases));
+        } else if (rubric == KielFormType.strategy) {
+          list = day.strategyItems;
+          rows.add(rubricDropDown(context, dayNumber, day.strategyMode, "Strateegia",
+              controller.selectStrategy, strategies));
         }
-      }
 
-      print(rows);
+        for (final input in list) {
+          if (input is ConfigControllerTextInput) {
+            rows.add(textLine(context, input));
+          }
+        }
 
-      return Column(
-        children: rows,
-      );
-    });
+        print(rows);
+
+        return Column(
+          children: rows,
+        );
+      }),
+    );
   }
 }

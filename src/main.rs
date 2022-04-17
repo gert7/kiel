@@ -19,7 +19,7 @@ mod strategy;
 mod switch_records;
 mod tariff;
 
-use std::{env, fs::File, io::Write, time::Duration};
+use std::{env, fs::File, io::Write, time::Duration, ops::Add};
 
 use chrono::{Date, DateTime, Datelike, Local, TimeZone, Utc};
 use chrono_tz::{
@@ -87,6 +87,7 @@ async fn planner_main(force_recalculate: bool) -> eyre::Result<()> {
 
     let now = Utc::now().with_timezone(&PLANNING_TZ);
     let today = now.date();
+    let tomorrow = today.add(chrono::Duration::days(1));
 
     let cached_states = PowerStateDB::get_day_from_database(&connection, &today, Some(conf_id))?;
     let exact_known_state = get_power_state_exact(&now, &cached_states);
@@ -110,6 +111,30 @@ async fn planner_main(force_recalculate: bool) -> eyre::Result<()> {
     let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &today);
 
     let mut strategy_result = match config_today.strategy {
+        Some(strategy) => strategy.get_day_strategy().plan_day_masked(&base_prices),
+        None => base_prices,
+    };
+
+    overrides::apply_overrides(&mut strategy_result, &config, &LOCAL_TZ);
+
+    PowerStateDB::insert_day_into_database(&connection, &strategy_result, Some(conf_id));
+    for pcu in &strategy_result {
+        println!("{:?}", pcu);
+    }
+
+    /// TOMORROW
+
+    let config_tomorrow = config.get_day(&tomorrow.weekday());
+    println!("{:?}", config_tomorrow);
+
+    let pdb = PriceCell::get_prices_from_db(&connection, &tomorrow);
+
+    let base = config_tomorrow
+        .base
+        .unwrap_or(DayBasePlan::Tariff(TariffStrategy));
+    let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &tomorrow);
+
+    let mut strategy_result = match config_tomorrow.strategy {
         Some(strategy) => strategy.get_day_strategy().plan_day_masked(&base_prices),
         None => base_prices,
     };

@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-
 use chrono::{DateTime, Timelike};
 use chrono_tz::Tz;
 use rust_decimal::Decimal;
@@ -9,7 +7,6 @@ use serde::Deserialize;
 use crate::{
     constants::LOCAL_TZ,
     price_cell::PriceCell,
-    price_matrix::{DaySlice, PricePerMwh},
 };
 
 use super::{MaskablePowerStrategy, PowerState, PriceChangeUnit};
