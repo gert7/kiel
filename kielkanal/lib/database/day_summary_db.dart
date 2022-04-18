@@ -46,15 +46,16 @@ class PriceCellDB {
         localDate.add(const Duration(days: 1)).toUtc().toIso8601String();
     final connection = await newDatabaseConnection(ip);
     final results = await connection.mappedResultsQuery(
-      "SELECT * FROM $tname WHERE moment_utc >= @startTime AND moment_utc < @endTime ORDER BY id DESC",
-    substitutionValues: { "startTime": startUTC, "endTime": endUTC });
+        "SELECT * FROM $tname WHERE moment_utc >= @startTime AND moment_utc < @endTime ORDER BY id DESC",
+        substitutionValues: {"startTime": startUTC, "endTime": endUTC});
 
     print("Number of results for prices: ${results.length}");
 
     return results.map<PriceCellDB>((jRow) {
       final row = jRow[tname]!;
       final price = double.parse(row["price_mwh"]);
-      final tariff = row["tariff_mwh"] != null ? double.parse(row["tariff_mwh"]) : null;
+      final tariff =
+          row["tariff_mwh"] != null ? double.parse(row["tariff_mwh"]) : null;
       return PriceCellDB(price, row["moment_utc"], tariff);
     }).toList();
   }
@@ -65,4 +66,22 @@ class DaySummary {
   final List<PriceCellDB> priceCells;
 
   DaySummary(this.powerStates, this.priceCells);
+}
+
+class TodayTomorrowSummary {
+  final List<PowerStateDB> powerStatesToday;
+  final List<PriceCellDB> priceCellsToday;
+  final List<PowerStateDB> powerStatesTomorrow;
+  final List<PriceCellDB> priceCellsTomorrow;
+
+  TodayTomorrowSummary(this.powerStatesToday, this.priceCellsToday,
+      this.powerStatesTomorrow, this.priceCellsTomorrow);
+
+  DaySummary today() {
+    return DaySummary(powerStatesToday, priceCellsToday);
+  }
+
+  DaySummary tomorrow() {
+    return DaySummary(powerStatesTomorrow, priceCellsTomorrow);
+  }
 }

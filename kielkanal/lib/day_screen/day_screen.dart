@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kielkanal/database/day_summary_db.dart';
+import 'package:kielkanal/day_screen/day_table.dart';
 import 'package:timezone/timezone.dart';
 
 import '../database/constants.dart';
@@ -25,15 +26,30 @@ String getMonthName(int month) {
   return months[month - 1];
 }
 
-class DayScreenFront extends StatefulWidget {
+class DayScreenDraft extends StatefulWidget {
   final String ip;
-  const DayScreenFront(this.ip, {Key? key}) : super(key: key);
+
+  static TZDateTime marketDayFromNow(int dayOffset) {
+    final marketNow =
+    TZDateTime.now(marketTimeZone()).add(Duration(days: dayOffset));
+    return TZDateTime(
+        marketTimeZone(), marketNow.year, marketNow.month, marketNow.day);
+  }
+
+  const DayScreenDraft(this.ip, {Key? key}) : super(key: key);
 
   @override
-  State<DayScreenFront> createState() => _DayScreenFrontState();
+  State<DayScreenDraft> createState() => _DayScreenDraftState();
 }
 
-class _DayScreenFrontState extends State<DayScreenFront> with SingleTickerProviderStateMixin {
+class _DayScreenDraftState extends State<DayScreenDraft>
+    with SingleTickerProviderStateMixin {
+  final _daysStreamController =
+  StreamController<TodayTomorrowSummary>.broadcast();
+
+  late TZDateTime today;
+  late TZDateTime tomorrow;
+
   static const tabs = <Tab>[
     Tab(
       text: "Täna",
@@ -45,162 +61,48 @@ class _DayScreenFrontState extends State<DayScreenFront> with SingleTickerProvid
 
   late TabController _tabController;
 
+  void loadData(String ip) async {
+    final states0 = await PowerStateDB.getDay(ip, today);
+    final prices0 = await PriceCellDB.getDay(ip, today);
+    final states1 = await PowerStateDB.getDay(ip, tomorrow);
+    final prices1 = await PriceCellDB.getDay(ip, tomorrow);
+    _daysStreamController
+        .add(TodayTomorrowSummary(states0, prices0, states1, prices1));
+  }
+
   @override
   void initState() {
     super.initState();
+    today = DayScreenDraft.marketDayFromNow(0);
+    tomorrow = DayScreenDraft.marketDayFromNow(1);
     _tabController = TabController(length: tabs.length, vsync: this);
+    loadData(widget.ip);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TabBar(
-          tabs: tabs,
-          controller: _tabController,
-          labelColor: Colors.black,
-        ),
-        Expanded(
-          child: TabBarView(controller: _tabController, children: [
-            DayScreen(widget.ip, 0),
-            DayScreen(widget.ip, 1),
-          ]),
-        ),
-      ],
-    );
-  }
-}
-
-class DayScreen extends StatelessWidget {
-  final _daySummaryStream = StreamController<DaySummary>();
-  final int daysOffset;
-
-  static const rowStyleBold =
-      TextStyle(fontSize: 16, fontWeight: FontWeight.bold);
-  static const rowStyle = TextStyle(fontSize: 16);
-
-  static TZDateTime marketToday() {
-    final marketNow = TZDateTime.now(marketTimeZone());
-    return TZDateTime(
-        marketTimeZone(), marketNow.year, marketNow.month, marketNow.day);
-  }
-
-  void loadData(String ip) async {
-    final today = marketToday();
-    final states = await PowerStateDB.getDay(ip, today);
-    final prices = await PriceCellDB.getDay(ip, today);
-    _daySummaryStream.add(DaySummary(states, prices));
-  }
-
-  DayScreen(String ip, this.daysOffset, {Key? key}) : super(key: key) {
-    loadData(ip);
-  }
-
-  String stateString(int state) {
-    switch (state) {
-      case 1:
-        return "Sees";
-      case 0:
-        return "Väljas";
-      default:
-        return "Teadmata";
-    }
-  }
-
-  List<DataRow> getRowsToday(DaySummary summary) {
-    final rows = <DataRow>[];
-    final now = DateTime.now().add(Duration(days: daysOffset));
-    final marketDayStart =
-        TZDateTime(marketTimeZone(), now.year, now.month, now.day);
-
-    for (var hour = 0; hour < 24; hour++) {
-      final offsetHour = marketDayStart.add(Duration(hours: hour));
-      final localHour = TZDateTime.from(offsetHour, localTimeZone()).hour;
-
-      final stateRows = summary.powerStates
-          .where((row) => row.momentUTC == offsetHour.toUtc())
-          .toList();
-      final state = stateRows.isNotEmpty ? stateRows[0].state : -1;
-
-      final rowColor = state == 1 ? Colors.green[300] : Colors.red[300];
-      final accentColor = state == 1 ? Colors.green[400] : Colors.red[400];
-
-      var priceString = "-";
-      final priceRows = summary.priceCells
-          .where((row) => row.momentUTC == offsetHour.toUtc())
-          .toList();
-      priceString = priceRows.isNotEmpty
-          ? priceRows[0].total().toStringAsFixed(2)
-          : priceString;
-
-      rows.add(DataRow(color: MaterialStateProperty.all(rowColor), cells: [
-        DataCell(Text(
-          "$localHour",
-          style: rowStyle,
-        )),
-        DataCell(Text(
-          stateString(state),
-          style: rowStyleBold,
-        )),
-        DataCell(Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-                color: accentColor,
-                borderRadius: const BorderRadius.all(Radius.circular(45))),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                priceString,
-                style: rowStyle,
-              ),
-            )))
-      ]));
-    }
-
-    return rows;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = <DataRow>[];
-
-    return StreamBuilder<DaySummary>(
-        stream: _daySummaryStream.stream,
-        builder: (context, snapshot) {
-          print(snapshot.hasData);
-          final rows =
-              snapshot.hasData ? getRowsToday(snapshot.data!) : <DataRow>[];
-
-          final marketDay = marketToday();
-          final day = marketDay.day;
-          final month = getMonthName(marketDay.month).toUpperCase();
-          final year = marketDay.year;
-
-          return Column(
-            children: [
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    "$day. $month $year",
-                    style: GoogleFonts.secularOne(fontSize: 24),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: DataTable(columns: const [
-                      DataColumn(label: Text("Tund")),
-                      DataColumn(label: Text("Seisund")),
-                      DataColumn(label: Text("€/MWh sh. tariif"))
-                    ], rows: rows),
-                  ),
-                ),
-              ),
-            ],
-          );
-        });
+    return StreamBuilder<TodayTomorrowSummary>(builder: (context, snapshot) {
+      if (snapshot.hasData) {
+        final data = snapshot.data!;
+        return Column(
+          children: [
+            TabBar(
+              tabs: tabs,
+              controller: _tabController,
+              labelColor: Colors.black,
+            ),
+            Expanded(
+              child: TabBarView(controller: _tabController, children: [
+                DayScreenTable(data.today(), today),
+                DayScreenTable(data.tomorrow(), tomorrow),
+              ]),
+            ),
+          ],
+        );
+      } else {
+        return const Center(child: CircularProgressIndicator());
+      }
+    },
+    stream: _daysStreamController.stream,);
   }
 }

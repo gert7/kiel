@@ -47,13 +47,13 @@ use crate::{
     strategy::default::TariffStrategy,
 };
 
-async fn fetch_main() -> eyre::Result<()> {
+async fn fetch_main(now: DateTime<Tz>) -> eyre::Result<()> {
     let connection = database::establish_connection();
 
     let date_matrix = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
     price_matrix::insert_matrix_to_database(&connection, &date_matrix)?;
 
-    planner_main(true).await?;
+    planner_main(true, now, true).await?;
 
     Ok(())
 }
@@ -74,7 +74,7 @@ fn get_power_state_exact(
     None
 }
 
-async fn planner_main(force_recalculate: bool) -> eyre::Result<()> {
+async fn planner_main(force_recalculate: bool, moment: DateTime<Tz>, enact_now: bool) -> eyre::Result<()> {
     let connection = database::establish_connection();
     // let (cfdb, config) = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME)?;
     // let conf_id = match cfdb {
@@ -85,12 +85,10 @@ async fn planner_main(force_recalculate: bool) -> eyre::Result<()> {
         ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
     println!("conf id {:?}", conf_id);
 
-    let now = Utc::now().with_timezone(&PLANNING_TZ);
-    let today = now.date();
-    let tomorrow = today.add(chrono::Duration::days(1));
+    let date = moment.date();
 
-    let cached_states = PowerStateDB::get_day_from_database(&connection, &today, Some(conf_id))?;
-    let exact_known_state = get_power_state_exact(&now, &cached_states);
+    let cached_states = PowerStateDB::get_day_from_database(&connection, &date, Some(conf_id))?;
+    let exact_known_state = get_power_state_exact(&moment, &cached_states);
     println!("Current cached state: {:?}", exact_known_state);
 
     if let Some(known_state) = exact_known_state {
@@ -100,17 +98,17 @@ async fn planner_main(force_recalculate: bool) -> eyre::Result<()> {
         }
     }
 
-    let config_today = config.get_day(&today.weekday());
-    println!("{:?}", config_today);
+    let config_day = config.get_day(&date.weekday());
+    println!("{:?}", config_day);
 
-    let pdb = PriceCell::get_prices_from_db(&connection, &today);
+    let pdb = PriceCell::get_prices_from_db(&connection, &date);
 
-    let base = config_today
+    let base = config_day
         .base
         .unwrap_or(DayBasePlan::Tariff(TariffStrategy));
-    let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &today);
+    let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &date);
 
-    let mut strategy_result = match config_today.strategy {
+    let mut strategy_result = match config_day.strategy {
         Some(strategy) => strategy.get_day_strategy().plan_day_masked(&base_prices),
         None => base_prices,
     };
@@ -122,33 +120,11 @@ async fn planner_main(force_recalculate: bool) -> eyre::Result<()> {
         println!("{:?}", pcu);
     }
 
-    /// TOMORROW
-
-    let config_tomorrow = config.get_day(&tomorrow.weekday());
-    println!("{:?}", config_tomorrow);
-
-    let pdb = PriceCell::get_prices_from_db(&connection, &tomorrow);
-
-    let base = config_tomorrow
-        .base
-        .unwrap_or(DayBasePlan::Tariff(TariffStrategy));
-    let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &tomorrow);
-
-    let mut strategy_result = match config_tomorrow.strategy {
-        Some(strategy) => strategy.get_day_strategy().plan_day_masked(&base_prices),
-        None => base_prices,
-    };
-
-    overrides::apply_overrides(&mut strategy_result, &config, &LOCAL_TZ);
-
-    PowerStateDB::insert_day_into_database(&connection, &strategy_result, Some(conf_id));
-    for pcu in &strategy_result {
-        println!("{:?}", pcu);
-    }
-
-    let state = get_power_state_exact(&now, &strategy_result);
-    if let Some(state) = state {
-        apply_power_state(&connection, &state).await?;
+    if enact_now {
+        let state = get_power_state_exact(&moment, &strategy_result);
+        if let Some(state) = state {
+            apply_power_state(&connection, &state).await?;
+        }
     }
 
     Ok(())
@@ -178,15 +154,23 @@ async fn main() -> color_eyre::Result<()> {
         }
     };
 
+    let now = Utc::now().with_timezone(&PLANNING_TZ);
+    let today = now.date();
+    println!("today {}", today);
+    let tomorrow = now.add(chrono::Duration::days(1));
+    println!("tomorrow {}", tomorrow);
+
     if second == "--fetch" {
-        fetch_main().await?;
+        fetch_main(now).await?;
     } else if second == "--hour" {
         println!("Fetcheth");
         // hour_main().await?;
-        planner_main(false).await?;
+        planner_main(false, now, true).await?;
+        planner_main(false, tomorrow, false).await?;
     } else if second == "--hour-force" {
         println!("Forcing recalculation...");
-        planner_main(true).await?;
+        planner_main(true, now, true).await?;
+        planner_main(true, tomorrow, false).await?;
     } else if second == "--reinsert-config" {
         let third = std::env::args().nth(2);
         let filename = third.unwrap_or("default.toml".to_owned());
@@ -194,7 +178,8 @@ async fn main() -> color_eyre::Result<()> {
         let connection = database::establish_connection();
         let default_toml = std::fs::read_to_string(filename)?;
         ConfigFile::insert_string(&connection, &default_toml)?;
-        planner_main(true).await?;
+        planner_main(true, now, true).await?;
+        planner_main(true, tomorrow, false).await?;
     } else {
         // let a = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
         eprintln!("Unknown mode: {}", second);
