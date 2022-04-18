@@ -59,7 +59,10 @@ class _ConfigScreenState extends State<ConfigScreen> {
                       color: dayIsValid ? null : Colors.redAccent,
                       child: InkWell(
                           splashColor: cardYellow,
-                          onTap: () => openDay(i),
+                          onTap: () {
+                            FocusScope.of(context).unfocus();
+                            openDay(i);
+                          },
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Text(
@@ -99,7 +102,10 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 padding: const EdgeInsets.all(8.0),
                 child: IconButton(
                   icon: const Icon(Icons.keyboard_backspace),
-                  onPressed: () => closeDay(),
+                  onPressed: () {
+                    FocusScope.of(context).unfocus();
+                    closeDay();
+                  },
                 ),
               ),
             ),

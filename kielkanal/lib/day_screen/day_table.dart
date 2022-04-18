@@ -26,6 +26,20 @@ class DayScreenTable extends StatelessWidget {
     }
   }
 
+  bool isCurrentHour(TZDateTime localMoment) {
+    final now = DateTime.now();
+    final nowTZ = TZDateTime.from(now, localTimeZone());
+    if(localMoment.year == nowTZ.year &&
+        localMoment.day == nowTZ.day &&
+        localMoment.month == nowTZ.month &&
+        localMoment.hour == nowTZ.hour
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   List<Color?> getRowColor(int state) {
     switch(state) {
       case 1: return [Colors.green[300], Colors.green[400]];
@@ -42,7 +56,9 @@ class DayScreenTable extends StatelessWidget {
 
     for (var hour = 0; hour < 24; hour++) {
       final offsetHour = marketDayStart.add(Duration(hours: hour));
-      final localHour = TZDateTime.from(offsetHour, localTimeZone()).hour;
+      final localTime = TZDateTime.from(offsetHour, localTimeZone());
+      final localHour = localTime.hour;
+      final isRightNow = isCurrentHour(localTime);
 
       final stateRows = summary.powerStates
           .where((row) => row.momentUTC == offsetHour.toUtc())
@@ -61,14 +77,16 @@ class DayScreenTable extends StatelessWidget {
           ? priceRows[0].total().toStringAsFixed(2)
           : priceString;
 
+      final rowStyleCalculated = isRightNow ? rowStyleBold : rowStyle;
+
       rows.add(DataRow(color: MaterialStateProperty.all(rowColor), cells: [
         DataCell(Text(
           "$localHour",
-          style: rowStyle,
+          style: rowStyleCalculated,
         )),
         DataCell(Text(
           stateString(state),
-          style: rowStyleBold,
+          style: rowStyleCalculated,
         )),
         DataCell(Container(
             width: double.infinity,
@@ -79,7 +97,7 @@ class DayScreenTable extends StatelessWidget {
               padding: const EdgeInsets.all(8.0),
               child: Text(
                 priceString,
-                style: rowStyle,
+                style: rowStyleCalculated,
               ),
             )))
       ]));

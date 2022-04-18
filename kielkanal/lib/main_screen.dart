@@ -101,7 +101,7 @@ class MainScreen extends StatefulWidget {
   List get options => <Widget>[
     const ConfigScreen(),
     DayScreenDraft(ip),
-    const ConfigScreen()
+    // const ConfigScreen()
   ];
 
   @override
@@ -130,8 +130,6 @@ class _MainScreenState extends State<MainScreen> {
               BottomNavigationBarItem(
                   icon: Icon(Icons.access_time_rounded),
                   label: "Täna ja homme"),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.notifications), label: "Teated"),
             ],
             currentIndex: _selectedItem,
             onTap: selectItem,
