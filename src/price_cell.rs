@@ -4,7 +4,7 @@ use crate::{price_matrix::DaySlice, schema::price_cells};
 use chrono::{Date, DateTime, Utc, Timelike};
 use chrono_tz::Tz;
 use color_eyre::eyre;
-use diesel::{connection, prelude::*, Connection, PgConnection};
+use diesel::{prelude::*, PgConnection};
 use rust_decimal::Decimal;
 
 use crate::{

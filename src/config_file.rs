@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc, Weekday};
 use color_eyre::eyre::{self, eyre};
 use diesel::{prelude::*, update, PgConnection};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{
     constants::{CVAR_CONFIG_FAILURE_COUNT, DEFAULT_CONFIG_FILENAME},
@@ -260,13 +260,10 @@ struct NewConfigFileDB<'a> {
 
 #[cfg(test)]
 pub mod tests {
-    use core::num;
-
     use crate::database;
 
     use super::*;
     use crate::schema::day_configurations::dsl::*;
-    use diesel::prelude::*;
 
     fn clear_table(connection: &PgConnection) {
         diesel::delete(day_configurations).execute(connection).ok();

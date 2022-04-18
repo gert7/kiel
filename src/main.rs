@@ -19,41 +19,30 @@ mod strategy;
 mod switch_records;
 mod tariff;
 
-use std::{env, fs::File, io::Write, time::Duration, ops::Add};
+use std::{io::Write, ops::Add};
 
-use chrono::{Date, DateTime, Datelike, Local, TimeZone, Utc};
-use chrono_tz::{
-    America::Sao_Paulo,
-    Europe::{Berlin, Tallinn},
-    Tz,
-};
+use chrono::{DateTime, Datelike, Utc};
+use chrono_tz::Tz;
 use color_eyre::eyre;
-use color_eyre::eyre::eyre;
 use config_file::ConfigFile;
-use constants::{DEFAULT_CONFIG_FILENAME, LOCAL_TZ, MARKET_TZ, PLANNING_TZ};
-use diesel::prelude::*;
+use constants::{DEFAULT_CONFIG_FILENAME, LOCAL_TZ, PLANNING_TZ};
 
 use price_cell::get_hour_start_end;
 use proc_mutex::wait_for_file;
-use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
 use strategy::{power_state_model::PowerStateDB, PowerState, PriceChangeUnit};
 
 use crate::{
     apply::apply_power_state,
     config_file::DayBasePlan,
-    price_cell::{NewPriceCellDB, PriceCell, PriceCellDB},
-    price_matrix::CentsPerKwh,
+    price_cell::PriceCell,
     strategy::default::TariffStrategy,
 };
 
-async fn fetch_main(now: DateTime<Tz>) -> eyre::Result<()> {
+async fn fetch_main() -> eyre::Result<()> {
     let connection = database::establish_connection();
 
     let date_matrix = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
     price_matrix::insert_matrix_to_database(&connection, &date_matrix)?;
-
-    planner_main(true, now, true).await?;
 
     Ok(())
 }
@@ -161,7 +150,9 @@ async fn main() -> color_eyre::Result<()> {
     println!("tomorrow {}", tomorrow);
 
     if second == "--fetch" {
-        fetch_main(now).await?;
+        fetch_main().await?;
+        planner_main(true, now, true).await?;
+        planner_main(true, tomorrow, false).await?;
     } else if second == "--hour" {
         println!("Fetcheth");
         // hour_main().await?;

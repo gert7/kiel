@@ -3,7 +3,6 @@ use chrono_tz::Tz;
 use color_eyre::eyre;
 use diesel::PgConnection;
 use rust_decimal::Decimal;
-use serde::Deserialize;
 
 use crate::price_cell::PriceCell;
 

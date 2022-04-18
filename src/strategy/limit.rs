@@ -1,9 +1,7 @@
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
-use crate::price_matrix::{DaySlice, PricePerMwh};
-
-use super::{HourStrategy, MaskablePowerStrategy, PowerState, PriceChangeUnit};
+use super::{MaskablePowerStrategy, PowerState, PriceChangeUnit};
 
 #[derive(Clone, Copy, Debug, Deserialize)]
 pub struct PriceLimitStrategy {
@@ -39,7 +37,7 @@ mod test {
     use rust_decimal::Decimal;
     use rust_decimal_macros::dec;
 
-    use crate::{sample_data::sample_day_specified, strategy::default::TariffStrategy};
+    use crate::{sample_data::sample_day_specified, strategy::{default::TariffStrategy, HourStrategy}};
 
     use super::*;
     const SAMPLE_DAY_PRICES: [Decimal; 8] = [

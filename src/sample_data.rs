@@ -1,6 +1,6 @@
 use chrono::{Date, Duration, TimeZone};
 use chrono_tz::{Tz, Europe::Berlin};
-use rand::{Rng, thread_rng};
+use rand::Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 

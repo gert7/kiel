@@ -1,11 +1,9 @@
-use crate::price_cell::NewPriceCellDB;
 use crate::schema::power_states;
 use crate::{constants::PLANNING_TZ, price_cell::get_day_start_end};
 use chrono::{Date, DateTime, Utc};
 use chrono_tz::Tz;
 use color_eyre::eyre;
-use diesel::pg::Pg;
-use diesel::{debug_query, prelude::*, PgConnection};
+use diesel::{prelude::*, PgConnection};
 
 use super::{PowerState, PriceChangeUnit};
 
@@ -113,8 +111,6 @@ impl NewPowerStateDB {
 
 #[cfg(test)]
 mod tests {
-    use chrono::TimeZone;
-
     use super::*;
     use crate::{
         constants::{HOURS_OF_DAY, MARKET_TZ},

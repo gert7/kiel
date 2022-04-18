@@ -2,7 +2,7 @@ use chrono::DateTime;
 use chrono_tz::Tz;
 use serde::Deserialize;
 
-use crate::{price_cell::PriceCell, price_matrix::DaySlice};
+use crate::price_matrix::DaySlice;
 
 use super::{HourStrategy, PowerState, PriceChangeUnit};
 
