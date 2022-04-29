@@ -169,6 +169,33 @@ mod test {
         dec!(12.39),  // 23
     ];
 
+    const SAMPLE_DAY_PRICES_MIDDAY: [Decimal; 24] = [
+        dec!(139.43), // 0
+        dec!(134.30), // 1
+        dec!(174.10), // 2
+        dec!(190.39), // 3
+        dec!(190.39), // 4
+        dec!(150.39), // 5
+        dec!(110.39), // 6
+        dec!(33.39),  // 7
+        dec!(49.33),  // 8
+        dec!(59.30),  // 9
+        dec!(10.10), // 10
+        dec!(14.39), // 11
+        dec!(15.39), // 12
+        dec!(14.39), // 13
+        dec!(42.39),  // 14
+        dec!(33.39),  // 15
+        dec!(120.33), // 16
+        dec!(51.30),  // 17 // sorted number 7 by price ascending
+        dec!(201.10), // 18
+        dec!(141.39),  // 19
+        dec!(158.39),  // 20
+        dec!(195.39),  // 21
+        dec!(179.39),  // 22
+        dec!(112.39),  // 23
+    ];
+
     #[test]
     fn gets_average() {
         let sample_day = sample_day_specified(&SAMPLE_DAY_PRICES, 0);
@@ -239,6 +266,26 @@ mod test {
         assert!(result[18].state == PowerState::Off);
         assert!(result[19].state == PowerState::On);
         assert!(result[23].state == PowerState::On);
+    }
+
+    #[test]
+    fn sorts_prices_good_midday() {
+        let sample_day = sample_day_specified(&SAMPLE_DAY_PRICES_MIDDAY, 0);
+        let base = TariffStrategy.plan_day(&sample_day);
+        for r in &base {
+            println!("{:?}", r);
+        }
+        let strat = SmartStrategy {
+            hour_budget: 7,
+            morning_hours: 5,
+            hard_limit_mwh: dec!(300.0),
+        };
+        let result = strat.plan_day_masked(&base);
+        println!("Smart: \n");
+        for r in &result {
+            println!("{:?}", r);
+        }
+        assert!(result.iter().filter(|r| r.state == PowerState::On).count() == 7);
     }
 
     #[test]

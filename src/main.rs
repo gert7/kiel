@@ -66,11 +66,6 @@ async fn planner_main<'a>(
     moment: DateTime<Tz>,
 ) -> eyre::Result<()> {
     let connection = database::establish_connection();
-    // let (cfdb, config) = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME)?;
-    // let conf_id = match cfdb {
-    //     Some(cfdb) => Some(cfdb.id),
-    //     None => None,
-    // };
     let (conf_id, config) =
         ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
     println!("conf id {:?}", conf_id);

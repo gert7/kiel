@@ -1,20 +1,20 @@
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, Datelike};
+    use chrono::{TimeZone, Datelike, Utc};
     use color_eyre::eyre;
     use diesel::{prelude::*, PgConnection};
     use rand::thread_rng;
 
     use crate::{
         config_file::{tests::insert_good_cfg, ConfigFile, DayBasePlan},
-        constants::{DEFAULT_CONFIG_FILENAME, MARKET_TZ, LOCAL_TZ},
+        constants::{DEFAULT_CONFIG_FILENAME, MARKET_TZ, LOCAL_TZ, PLANNING_TZ},
         database::establish_connection,
         price_cell::{self, PriceCell},
         sample_data,
         schema::{
             convar_ints, convar_strings, day_configurations, power_states, price_cells,
             switch_records,
-        }, strategy::{default::TariffStrategy, PowerState, power_state_model::PowerStateDB}, overrides,
+        }, strategy::{default::TariffStrategy, PowerState, power_state_model::PowerStateDB}, overrides, planner_main,
     };
 
     fn clear_all_tables(connection: &PgConnection) -> eyre::Result<()> {
@@ -90,5 +90,16 @@ mod tests {
         }
 
         println!("{:?}", strategy_result);
+    }
+
+    #[tokio::test]
+    async fn integrate_tomorrow() {
+        let connection = establish_connection();
+        clear_all_tables(&connection).unwrap();
+        let start_date = MARKET_TZ.ymd(2022, 3, 13); // Sunday
+        let sample_day = sample_data::sample_day(&start_date, 0, 24, &mut thread_rng());
+        PriceCell::insert_cells_into_database(&connection, &sample_day.0).unwrap();
+        let now = Utc::now().with_timezone(&PLANNING_TZ);
+        planner_main(true, now).await.unwrap();
     }
 }
