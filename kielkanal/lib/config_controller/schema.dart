@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kielkanal/formatters.dart';
 
-abstract class SchemaInput {}
+abstract class SchemaInput {
+  const SchemaInput();
+}
 
 class SchemaItem {
   final String tomlName;
@@ -11,7 +13,7 @@ class SchemaItem {
 
   final SchemaInput input;
 
-  SchemaItem(this.tomlName, this.input, this.prettyName);
+  const SchemaItem(this.tomlName, this.input, this.prettyName);
 }
 
 abstract class KielTextInput extends SchemaInput {
@@ -22,9 +24,13 @@ abstract class KielTextInput extends SchemaInput {
   bool isValid(String t);
 
   int? characterLimit();
+
+  const KielTextInput();
 }
 
 class EMWhInput extends KielTextInput {
+  const EMWhInput();
+
   @override
   List<TextInputFormatter> getFormatters() {
     return [
@@ -58,7 +64,7 @@ class EMWhInput extends KielTextInput {
 class HourInput extends KielTextInput {
   final int? hourLimit;
 
-  HourInput({this.hourLimit});
+  const HourInput({this.hourLimit});
 
   @override
   List<TextInputFormatter> getFormatters() {

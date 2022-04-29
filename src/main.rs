@@ -32,9 +32,7 @@ use proc_mutex::wait_for_file;
 use strategy::{power_state_model::PowerStateDB, PowerState, PriceChangeUnit};
 
 use crate::{
-    apply::apply_power_state,
-    config_file::DayBasePlan,
-    price_cell::PriceCell,
+    apply::apply_power_state, config_file::DayBasePlan, price_cell::PriceCell,
     strategy::default::TariffStrategy,
 };
 
@@ -63,7 +61,10 @@ fn get_power_state_exact(
     None
 }
 
-async fn planner_main(force_recalculate: bool, moment: DateTime<Tz>, enact_now: bool) -> eyre::Result<()> {
+async fn planner_main<'a>(
+    force_recalculate: bool,
+    moment: DateTime<Tz>,
+) -> eyre::Result<()> {
     let connection = database::establish_connection();
     // let (cfdb, config) = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME)?;
     // let conf_id = match cfdb {
@@ -109,13 +110,19 @@ async fn planner_main(force_recalculate: bool, moment: DateTime<Tz>, enact_now: 
         println!("{:?}", pcu);
     }
 
-    if enact_now {
-        let state = get_power_state_exact(&moment, &strategy_result);
-        if let Some(state) = state {
-            apply_power_state(&connection, &state).await?;
-        }
-    }
+    Ok(())
+}
 
+async fn enact_now(now: DateTime<Tz>) -> eyre::Result<()> {
+    let connection = database::establish_connection();
+    let (conf_id, _) =
+        ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
+    let date = now.date();
+    let cached_states = PowerStateDB::get_day_from_database(&connection, &date, Some(conf_id))?;
+    let exact_known_state = get_power_state_exact(&now, &cached_states);
+    if let Some(known_state) = exact_known_state {
+        apply_power_state(&connection, &known_state).await?;
+    }
     Ok(())
 }
 
@@ -149,19 +156,16 @@ async fn main() -> color_eyre::Result<()> {
     let tomorrow = now.add(chrono::Duration::days(1));
     println!("tomorrow {}", tomorrow);
 
+    let mut force_recalculate = false;
+
     if second == "--fetch" {
         fetch_main().await?;
-        planner_main(true, now, true).await?;
-        planner_main(true, tomorrow, false).await?;
+        force_recalculate = true;
     } else if second == "--hour" {
-        println!("Fetcheth");
         // hour_main().await?;
-        planner_main(false, now, true).await?;
-        planner_main(false, tomorrow, false).await?;
     } else if second == "--hour-force" {
         println!("Forcing recalculation...");
-        planner_main(true, now, true).await?;
-        planner_main(true, tomorrow, false).await?;
+        force_recalculate = true;
     } else if second == "--reinsert-config" {
         let third = std::env::args().nth(2);
         let filename = third.unwrap_or("default.toml".to_owned());
@@ -169,12 +173,15 @@ async fn main() -> color_eyre::Result<()> {
         let connection = database::establish_connection();
         let default_toml = std::fs::read_to_string(filename)?;
         ConfigFile::insert_string(&connection, &default_toml)?;
-        planner_main(true, now, true).await?;
-        planner_main(true, tomorrow, false).await?;
+        force_recalculate = true;
     } else {
         // let a = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
         eprintln!("Unknown mode: {}", second);
     }
+
+    planner_main(force_recalculate, now).await?;
+    planner_main(force_recalculate, tomorrow).await?;
+    enact_now(now).await?;
 
     lockfile
         .write(b"rub a dub dub thanks for the grub")

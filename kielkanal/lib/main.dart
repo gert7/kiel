@@ -13,33 +13,35 @@ const defaultIP = "192.168.1.138";
 class IPCheckResult {
   final String ip;
   final bool result;
+
   IPCheckResult(this.ip, this.result);
-}
 
-Future<IPCheckResult> ipIsValid(String ip, {BuildContext? context}) async {
-  const testString = "world";
+  static Future<IPCheckResult> ipIsValid(String ip,
+      {BuildContext? context}) async {
+    const testString = "world";
 
-  final client = HttpClient();
-  try {
-    final request = await client.get(ip, 8196, "/service/$testString");
-    final response = await request.close();
-    final stringData = await response.transform(utf8.decoder).join();
-    if (stringData == "Kiel says hello, $testString!") {
-      print("kiel says hello");
-      return IPCheckResult(ip, true);
-    } else {
-      print("connection but no hello");
+    final client = HttpClient();
+    try {
+      final request = await client.get(ip, 8196, "/service/$testString");
+      final response = await request.close();
+      final stringData = await response.transform(utf8.decoder).join();
+      if (stringData == "Kiel says hello, $testString!") {
+        print("kiel says hello");
+        return IPCheckResult(ip, true);
+      } else {
+        print("connection but no hello");
+        return IPCheckResult(ip, false);
+      }
+    } catch (e) {
+      print(e);
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString()),
+        ));
+      }
+
       return IPCheckResult(ip, false);
     }
-  } catch (e) {
-    print(e);
-    if(context != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.toString()),
-      ));
-    }
-
-    return IPCheckResult(ip, false);
   }
 }
 
@@ -136,7 +138,9 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               ElevatedButton(
                   onPressed: () async {
-                    _ipStreamController.add(await ipIsValid(_ipController.text, context: context));
+                    _ipStreamController.add(await IPCheckResult.ipIsValid(
+                        _ipController.text,
+                        context: context));
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),

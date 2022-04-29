@@ -8,29 +8,6 @@ enum StrategyMode {
   Smart,
 }
 
-extension on StrategyMode {
-  String string() {
-    switch (this) {
-      case StrategyMode.None:
-        return "None";
-      case StrategyMode.Limit:
-        return "Limit";
-      case StrategyMode.Smart:
-        return "Smart";
-    }
-  }
-}
-
-StrategyMode strategyTypeFromString(String s) {
-  if (s == "Limit") {
-    return StrategyMode.Limit;
-  } else if (s == "Smart") {
-    return StrategyMode.Smart;
-  } else {
-    return StrategyMode.None;
-  }
-}
-
 abstract class Strategy {
   final StrategyMode mode;
   final Map<String, dynamic> map;
@@ -40,16 +17,16 @@ abstract class Strategy {
   Strategy.withoutMap(this.mode) : map = {};
 
   Map toMap() {
-    return {"mode": mode.string()};
+    return {"mode": mode.name};
   }
 }
 
 class LimitStrategy extends Strategy {
   static const limitMWhKey = "limit_mwh";
 
-  static List<SchemaItem> getSchema() {
-    return [SchemaItem(limitMWhKey, EMWhInput(), "Limiit (€/MWh)")];
-  }
+  static const schema = <SchemaItem>[
+    SchemaItem(limitMWhKey, EMWhInput(), "Limiit (€/MWh)")
+  ];
 
   LimitStrategy(map) : super(StrategyMode.Limit, map);
 
@@ -68,7 +45,7 @@ class LimitStrategy extends Strategy {
 
   @override
   Map toMap() {
-    return {"mode": mode.string(), limitMWhKey: map[limitMWhKey]};
+    return {"mode": mode.name, limitMWhKey: map[limitMWhKey]};
   }
 }
 
@@ -76,6 +53,13 @@ class SmartStrategy extends Strategy {
   static const hourBudgetKey = "hour_budget";
   static const morningHoursKey = "morning_hours";
   static const hardLimitKey = "hard_limit_mwh";
+
+  static const schema = <SchemaItem>[
+    SchemaItem(hourBudgetKey, HourInput(), "Tundide kogus"),
+    SchemaItem(
+        morningHoursKey, HourInput(hourLimit: 7), "Hommikutundide kogus"),
+    SchemaItem(hardLimitKey, EMWhInput(), "Hinnalimiit sh. tariif")
+  ];
 
   SmartStrategy(map) : super(StrategyMode.Smart, map);
 
@@ -86,7 +70,7 @@ class SmartStrategy extends Strategy {
       : super.withoutMap(StrategyMode.Smart) {
     for (final cci in cciList) {
       if (cci is ConfigControllerTextInput) {
-        switch(cci.schema.tomlName) {
+        switch (cci.schema.tomlName) {
           case hourBudgetKey:
             map[hourBudgetKey] = HourInput.getInt(cci.controller.text);
             break;
@@ -104,25 +88,16 @@ class SmartStrategy extends Strategy {
   @override
   Map toMap() {
     return {
-      "mode": mode.string(),
+      "mode": mode.name,
       hourBudgetKey: map[hourBudgetKey],
       morningHoursKey: map[morningHoursKey],
       hardLimitKey: map[hardLimitKey]
     };
   }
-
-  static List<SchemaItem> getSchema() {
-    return [
-      SchemaItem(hourBudgetKey, HourInput(), "Tundide kogus"),
-      SchemaItem(
-          morningHoursKey, HourInput(hourLimit: 7), "Hommikutundide kogus"),
-      SchemaItem(hardLimitKey, EMWhInput(), "Hinnalimiit sh. tariif")
-    ];
-  }
 }
 
 Strategy? strategyFromMap(Map<String, dynamic> map) {
-  switch (strategyTypeFromString(map["mode"])) {
+  switch (StrategyMode.values.byName(map["mode"])) {
     case StrategyMode.Limit:
       return LimitStrategy(map);
     case StrategyMode.Smart:
@@ -145,9 +120,9 @@ Strategy? strategyFromInputs(
 
 List<SchemaItem>? getSchemaByStrategyType(StrategyMode? strategyMode) {
   if (strategyMode == StrategyMode.Limit) {
-    return LimitStrategy.getSchema();
+    return LimitStrategy.schema;
   } else if (strategyMode == StrategyMode.Smart) {
-    return SmartStrategy.getSchema();
+    return SmartStrategy.schema;
   } else {
     return null;
   }
