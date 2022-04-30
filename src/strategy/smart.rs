@@ -4,10 +4,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::Deserialize;
 
-use crate::{
-    constants::LOCAL_TZ,
-    price_cell::PriceCell,
-};
+use crate::{constants::LOCAL_TZ, price_cell::PriceCell};
 
 use super::{MaskablePowerStrategy, PowerState, PriceChangeUnit};
 
@@ -79,12 +76,19 @@ impl MaskablePowerStrategy for SmartStrategy {
             .iter()
             .filter(|pcu| !is_morning_hour(&pcu.moment));
 
+        let mut morning_hours_on = 0;
+
         for _ in 0..morning_hour_count {
             println!("morning hour");
             let next = morning_sorted.next();
             if let Some(pcu) = next {
-                println!("morning hour reserved: {}", pcu.moment);
-                result.push(pcu.clone_with_power_state(PowerState::On));
+                if let Some(price) = pcu.price {
+                    if price.total().0 < self.hard_limit_mwh {
+                        println!("morning hour reserved: {}", pcu.moment);
+                        result.push(pcu.clone_with_power_state(PowerState::On));
+                        morning_hours_on += 1;
+                    }
+                }
             }
         }
 
@@ -92,7 +96,7 @@ impl MaskablePowerStrategy for SmartStrategy {
         sort_by_price_refs(&mut remainder, ap);
         let mut remainder = remainder.into_iter();
 
-        let remaining_on = self.hour_budget - morning_hour_count;
+        let remaining_on = self.hour_budget - morning_hours_on;
 
         for _ in 0..remaining_on {
             let next = remainder.next();
@@ -180,20 +184,20 @@ mod test {
         dec!(33.39),  // 7
         dec!(49.33),  // 8
         dec!(59.30),  // 9
-        dec!(10.10), // 10
-        dec!(14.39), // 11
-        dec!(15.39), // 12
-        dec!(14.39), // 13
+        dec!(10.10),  // 10
+        dec!(14.39),  // 11
+        dec!(15.39),  // 12
+        dec!(14.39),  // 13
         dec!(42.39),  // 14
         dec!(33.39),  // 15
         dec!(120.33), // 16
         dec!(51.30),  // 17 // sorted number 7 by price ascending
         dec!(201.10), // 18
-        dec!(141.39),  // 19
-        dec!(158.39),  // 20
-        dec!(195.39),  // 21
-        dec!(179.39),  // 22
-        dec!(112.39),  // 23
+        dec!(141.39), // 19
+        dec!(158.39), // 20
+        dec!(195.39), // 21
+        dec!(179.39), // 22
+        dec!(112.39), // 23
     ];
 
     #[test]
@@ -278,14 +282,16 @@ mod test {
         let strat = SmartStrategy {
             hour_budget: 7,
             morning_hours: 5,
-            hard_limit_mwh: dec!(300.0),
+            hard_limit_mwh: dec!(100.0),
         };
         let result = strat.plan_day_masked(&base);
         println!("Smart: \n");
         for r in &result {
             println!("{:?}", r);
         }
-        assert!(result.iter().filter(|r| r.state == PowerState::On).count() == 7);
+        let on_count = result.iter().filter(|r| r.state == PowerState::On).count();
+        println!("{}", on_count);
+        assert!(on_count == 7);
     }
 
     #[test]
