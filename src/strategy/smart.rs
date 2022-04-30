@@ -88,6 +88,9 @@ impl MaskablePowerStrategy for SmartStrategy {
                         result.push(pcu.clone_with_power_state(PowerState::On));
                         morning_hours_on += 1;
                     }
+                    else {
+                        result.push(pcu.clone_with_power_state(PowerState::Off));
+                    }
                 }
             }
         }
@@ -173,32 +176,32 @@ mod test {
         dec!(12.39),  // 23
     ];
 
-    const SAMPLE_DAY_PRICES_MIDDAY: [Decimal; 24] = [
-        dec!(139.43), // 0
-        dec!(134.30), // 1
-        dec!(174.10), // 2
-        dec!(190.39), // 3
-        dec!(190.39), // 4
-        dec!(150.39), // 5
-        dec!(110.39), // 6
-        dec!(33.39),  // 7
-        dec!(49.33),  // 8
-        dec!(59.30),  // 9
-        dec!(10.10),  // 10
-        dec!(14.39),  // 11
-        dec!(15.39),  // 12
-        dec!(14.39),  // 13
-        dec!(42.39),  // 14
-        dec!(33.39),  // 15
-        dec!(120.33), // 16
-        dec!(51.30),  // 17 // sorted number 7 by price ascending
-        dec!(201.10), // 18
-        dec!(141.39), // 19
-        dec!(158.39), // 20
-        dec!(195.39), // 21
-        dec!(179.39), // 22
-        dec!(112.39), // 23
-    ];
+    const SAMPLE_DAY_PRICES_MIDDAY_HARD: [Decimal; 24] = [
+    dec!(238.46), // 0
+    dec!(221.46), // 1
+    dec!(212.43), // 2
+    dec!(221.30), // 3
+    dec!(221.10), // 4
+    dec!(201.39), // 5
+    dec!(234.39), // 6
+    dec!(240.39), // 7
+    dec!(73.39), // 8
+    dec!(76.39),  // 9
+    dec!(73.33),  // 10
+    dec!(68.30),  // 11
+    dec!(65.10), // 12
+    dec!(65.39), // 13
+    dec!(65.39), // 14
+    dec!(66.39), // 15
+    dec!(78.39),  // 16
+    dec!(215.39),  // 17
+    dec!(259.33), // 18
+    dec!(279.30),  // 19 // sorted number 7 by price ascending
+    dec!(285.10), // 20
+    dec!(279.39),  // 21
+    dec!(254.39),  // 22
+    dec!(203.39),  // 23
+];
 
     #[test]
     fn gets_average() {
@@ -274,7 +277,7 @@ mod test {
 
     #[test]
     fn sorts_prices_good_midday() {
-        let sample_day = sample_day_specified(&SAMPLE_DAY_PRICES_MIDDAY, 0);
+        let sample_day = sample_day_specified(&SAMPLE_DAY_PRICES_MIDDAY_HARD, 0);
         let base = TariffStrategy.plan_day(&sample_day);
         for r in &base {
             println!("{:?}", r);
@@ -282,7 +285,7 @@ mod test {
         let strat = SmartStrategy {
             hour_budget: 7,
             morning_hours: 5,
-            hard_limit_mwh: dec!(100.0),
+            hard_limit_mwh: dec!(180.0),
         };
         let result = strat.plan_day_masked(&base);
         println!("Smart: \n");
@@ -292,6 +295,7 @@ mod test {
         let on_count = result.iter().filter(|r| r.state == PowerState::On).count();
         println!("{}", on_count);
         assert!(on_count == 7);
+        assert!(false);
     }
 
     #[test]
