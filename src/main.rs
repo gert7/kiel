@@ -6,6 +6,7 @@ mod config_file;
 mod constants;
 mod convars;
 mod database;
+mod holidays;
 mod integration_test;
 mod nord_pool_spot;
 mod nord_pool_spot_json;
@@ -61,10 +62,7 @@ fn get_power_state_exact(
     None
 }
 
-async fn planner_main<'a>(
-    force_recalculate: bool,
-    moment: DateTime<Tz>,
-) -> eyre::Result<()> {
+async fn planner_main<'a>(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Result<()> {
     let connection = database::establish_connection();
     let (conf_id, config) =
         ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
@@ -78,7 +76,7 @@ async fn planner_main<'a>(
 
     if let Some(known_state) = exact_known_state {
         if !force_recalculate {
-            apply_power_state(&connection, &known_state).await?;
+            // apply_power_state(&connection, &known_state).await?;
             return Ok(());
         }
     }

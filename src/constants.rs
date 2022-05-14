@@ -22,6 +22,10 @@ lazy_static! {
 
     pub static ref NIGHT_TARIFF_PRICE: CentsPerKwh = CentsPerKwh(dec!(3.86));
 
+    pub static ref DAY_TARIFF_PRICE_JUNE_2022: CentsPerKwh = CentsPerKwh(dec!(7.31));
+
+    pub static ref NIGHT_TARIFF_PRICE_JUNE_2022: CentsPerKwh = CentsPerKwh(dec!(4.25));
+
 }
 
 pub const CVAR_CONFIG_FAILURE_COUNT: &str = "config_failures";

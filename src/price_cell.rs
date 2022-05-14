@@ -1,14 +1,17 @@
 use std::ops::Range;
 
 use crate::{price_matrix::DaySlice, schema::price_cells};
-use chrono::{Date, DateTime, Utc, Timelike};
+use chrono::{Date, DateTime, TimeZone, Timelike, Utc};
 use chrono_tz::Tz;
 use color_eyre::eyre;
 use diesel::{prelude::*, PgConnection};
 use rust_decimal::Decimal;
 
 use crate::{
-    constants::{DAY_TARIFF_PRICE, MARKET_TZ, NIGHT_TARIFF_PRICE},
+    constants::{
+        DAY_TARIFF_PRICE, DAY_TARIFF_PRICE_JUNE_2022, MARKET_TZ, NIGHT_TARIFF_PRICE,
+        NIGHT_TARIFF_PRICE_JUNE_2022,
+    },
     price_matrix::{CentsPerKwh, PricePerMwh},
     tariff::Tariff,
 };
@@ -47,8 +50,28 @@ impl PriceCell {
         PricePerMwh::from(tariff_value)
     }
 
+    fn day_tariff_price<'a>(moment: &Date<Tz>) -> &'a CentsPerKwh {
+        if moment < &MARKET_TZ.ymd(2022, 6, 1) {
+            &DAY_TARIFF_PRICE
+        } else {
+            &DAY_TARIFF_PRICE_JUNE_2022
+        }
+    }
+
+    fn night_tariff_price<'a>(moment: &Date<Tz>) -> &'a CentsPerKwh {
+        if moment < &MARKET_TZ.ymd(2022, 6, 1) {
+            &NIGHT_TARIFF_PRICE
+        } else {
+            &NIGHT_TARIFF_PRICE_JUNE_2022
+        }
+    }
+
     pub fn get_tariff_price_current(moment: DateTime<Tz>) -> PricePerMwh {
-        Self::get_tariff_price(moment, &DAY_TARIFF_PRICE, &NIGHT_TARIFF_PRICE)
+        Self::get_tariff_price(
+            moment,
+            PriceCell::day_tariff_price(&moment.date()),
+            PriceCell::night_tariff_price(&moment.date()),
+        )
     }
 
     fn add_tariff(&mut self, day_tariff: &CentsPerKwh, night_tariff: &CentsPerKwh) {
@@ -110,7 +133,10 @@ impl PriceCell {
         Ok(())
     }
 
-    pub fn insert_cells_into_database(connection: &PgConnection, prices: &Vec<PriceCell>) -> eyre::Result<()> {
+    pub fn insert_cells_into_database(
+        connection: &PgConnection,
+        prices: &Vec<PriceCell>,
+    ) -> eyre::Result<()> {
         for price in prices {
             price.insert_cell_into_database(connection)?;
         }

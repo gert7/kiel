@@ -18,12 +18,26 @@ pub enum PowerState {
     Off,
 }
 
+// #[derive(Clone, Copy, Debug)]
+// pub struct PriceChangeUnit<'a> {
+//     pub moment: DateTime<Tz>,
+//     pub price: Option<&'a PriceCell>,
+//     pub state: PowerState,
+// }
+
 #[derive(Clone, Copy, Debug)]
-pub struct PriceChangeUnit<'a> {
+pub struct ChangeUnit<T> {
     pub moment: DateTime<Tz>,
-    pub price: Option<&'a PriceCell>,
     pub state: PowerState,
+    pub price: T,
 }
+
+pub enum ChangeUnitEnum<'a> {
+    Priced(ChangeUnit<&'a PriceCell>),
+    Blank(ChangeUnit<()>)
+}
+
+pub type PriceChangeUnit<'a> = ChangeUnit<Option<&'a PriceCell>>;
 
 impl<'a> PriceChangeUnit<'a> {
     pub fn clone_with_power_state(&self, state: PowerState) -> PriceChangeUnit<'a> {

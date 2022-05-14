@@ -295,7 +295,6 @@ mod test {
         let on_count = result.iter().filter(|r| r.state == PowerState::On).count();
         println!("{}", on_count);
         assert!(on_count == 7);
-        assert!(false);
     }
 
     #[test]
@@ -312,8 +311,8 @@ mod test {
         };
         let result = strat.plan_day_masked(&base);
         println!("Smart: \n");
-        for r in &result {
-            println!("{:?}", r);
+        for (i, r) in result.iter().enumerate() {
+            println!("{} {:?}", i, r);
         }
         assert!(result[0].state == PowerState::Off);
         assert!(result[1].state == PowerState::Off);
@@ -323,7 +322,7 @@ mod test {
         assert!(result[5].state == PowerState::Off);
         assert!(result[6].state == PowerState::Off);
         assert!(result[7].state == PowerState::On);
-        assert!(result[17].state == PowerState::Off);
+        assert!(result[17].state == PowerState::On);
         assert!(result[18].state == PowerState::Off);
         assert!(result[19].state == PowerState::On);
         assert!(result[23].state == PowerState::On);

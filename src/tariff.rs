@@ -1,7 +1,7 @@
-use chrono::{DateTime, Datelike, Timelike, Weekday};
+use chrono::{DateTime, Datelike, Timelike, Utc, Weekday};
 use chrono_tz::Tz;
 
-use crate::constants::LOCAL_TZ;
+use crate::{constants::LOCAL_TZ, holidays::is_national_holiday};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Tariff {
@@ -10,35 +10,21 @@ pub enum Tariff {
 }
 
 impl Tariff {
-    pub fn get_tariff(time: &DateTime<Tz>) -> Tariff {
-        let time = time.with_timezone(&LOCAL_TZ);
-        let day = time.weekday();
-        if [Weekday::Sat, Weekday::Sun].contains(&day) {
+    fn daytime_tariff(hour: u32) -> Tariff {
+        if hour < 7 || hour >= 22 {
             Tariff::Night
         } else {
-            let hour = time.hour();
-            if hour < 7 || hour >= 22 {
-                Tariff::Night
-            } else {
-                Tariff::Day
-            }
+            Tariff::Day
         }
     }
 
-    /// Gets the day-night tariff for a given moment in time,
-    /// but treats Sunday like a regular weekday.
-    pub fn get_tariff_excl_sunday(time: &DateTime<Tz>) -> Tariff {
+    pub fn get_tariff(time: &DateTime<Tz>) -> Tariff {
         let time = time.with_timezone(&LOCAL_TZ);
         let day = time.weekday();
-        if day == Weekday::Sat {
+        if [Weekday::Sat, Weekday::Sun].contains(&day) || is_national_holiday(&time.date()) {
             Tariff::Night
         } else {
-            let hour = time.hour();
-            if hour < 7 || hour >= 22 {
-                Tariff::Night
-            } else {
-                Tariff::Day
-            }
+            Tariff::daytime_tariff(time.hour())
         }
     }
 }
