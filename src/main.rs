@@ -1,14 +1,15 @@
 #[macro_use]
 extern crate diesel;
 mod apply;
-mod bar_chart;
+// mod bar_chart;
 mod config_file;
 mod constants;
 mod convars;
 mod database;
 mod holidays;
 mod integration_test;
-mod nord_pool_spot;
+// mod nord_pool_spot;
+mod nord_pool_meta;
 mod nord_pool_spot_json;
 mod overrides;
 mod price_cell;

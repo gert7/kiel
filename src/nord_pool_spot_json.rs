@@ -5,7 +5,7 @@ use json::JsonValue;
 
 use crate::{
     constants::MARKET_TZ,
-    nord_pool_spot::{
+    nord_pool_meta::{
         convert_hour_to_u32, convert_price_to_decimal, parse_date, retrieve_datetime,
     },
     price_cell::PriceCell,

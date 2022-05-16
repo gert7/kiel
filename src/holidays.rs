@@ -1,5 +1,5 @@
 use bdays::easter::{easter_naive_date, EasterError};
-use chrono::{Date, Datelike, Duration, TimeZone};
+use chrono::{Date, Datelike, Duration};
 use chrono_tz::Tz;
 use lazy_static::lazy_static;
 
