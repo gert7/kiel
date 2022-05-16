@@ -1,6 +1,9 @@
-use bdays::easter::easter_naive_date;
-use chrono::{Date, Datelike, Duration};
+use bdays::easter::{easter_naive_date, EasterError};
+use chrono::{Date, Datelike, Duration, TimeZone};
 use chrono_tz::Tz;
+use lazy_static::lazy_static;
+
+use crate::constants::MARKET_TZ;
 
 struct MonthDay {
     month: u32,
@@ -27,6 +30,46 @@ const FIXED_NATL_HOLIDAYS: [MonthDay; 8] = [
     MonthDay { month: 12, day: 26 },
 ];
 
+fn precompute_easter_dates() -> Result<[MonthDay; 6], EasterError> {
+    let now = chrono::Local::now().with_timezone(&MARKET_TZ);
+    let e1 = easter_naive_date(now.year())?;
+    let e2 = easter_naive_date(now.year() + 1)?;
+    let gf1 = e1 - Duration::days(2);
+    let gf2 = e2 - Duration::days(2);
+    let pc1 = e1 + Duration::days(49);
+    let pc2 = e2 + Duration::days(49);
+    Ok([
+        MonthDay {
+            month: e1.month(),
+            day: e1.day(),
+        },
+        MonthDay {
+            month: e2.month(),
+            day: e2.day(),
+        },
+        MonthDay {
+            month: gf1.month(),
+            day: gf1.day(),
+        },
+        MonthDay {
+            month: gf2.month(),
+            day: gf2.day(),
+        },
+        MonthDay {
+            month: pc1.month(),
+            day: pc1.day(),
+        },
+        MonthDay {
+            month: pc2.month(),
+            day: pc2.day(),
+        },
+    ])
+}
+
+lazy_static! {
+    static ref EASTER_DATES: Result<[MonthDay; 6], EasterError> = precompute_easter_dates();
+}
+
 fn is_same_date<D1: Datelike, D2: Datelike>(d1: &D1, d2: &D2) -> bool {
     d1.month() == d2.month() && d1.day() == d2.day()
 }
@@ -50,8 +93,18 @@ fn is_easter_or_good_friday(date: &Date<Tz>) -> bool {
     }
 }
 
+fn is_easter_related_date(date: &Date<Tz>) -> bool {
+    if let Ok(easter_holidays) = &*EASTER_DATES {
+        easter_holidays
+            .iter()
+            .any(|hd| hd.month == date.month() && hd.day == date.day())
+    } else {
+        false
+    }
+}
+
 fn is_moving_national_holiday(date: &Date<Tz>) -> bool {
-    is_easter_or_good_friday(date)
+    is_easter_related_date(date)
 }
 
 pub fn is_national_holiday(date: &Date<Tz>) -> bool {
