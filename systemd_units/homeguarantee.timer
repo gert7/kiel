@@ -2,7 +2,7 @@
 Description=Ensure HomeAssistant
 
 [Timer]
-Unit=kieltimer.service
+Unit=homeguarantee.service
 OnCalendar=*-*-* 03:30:30
 
 [Install]
