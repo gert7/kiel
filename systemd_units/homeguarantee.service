@@ -1,0 +1,7 @@
+[Unit]
+Description=Automatically restarts HomeAssistant
+Requires=homeguarantee.timer
+
+[Service]
+ExecStart=docker containers start homeassistant
+

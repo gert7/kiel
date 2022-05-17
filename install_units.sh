@@ -8,6 +8,8 @@ sudo systemctl stop kieltimer.timer
 sudo systemctl stop kieltimer.service
 sudo systemctl stop kielfetch.timer
 sudo systemctl stop kielfetch.service
+sudo systemctl stop homeguarantee.timer
+sudo systemctl stop homeguarantee.service
 
 cd $HOME
 mkdir -p $USYSDIR
@@ -23,5 +25,11 @@ sudo mkdir -p /etc/kiel.d
 sudo cp default.toml /etc/kiel.d/default.toml
 sudo cp .env /etc/kiel.d/.env
 
-echo "Units installed. Execute 'sudo systemctl start kiel.target' to start services."
+if [ $1 == 0 ]; then
+  echo "Units installed. Execute 'sudo systemctl start kiel.target' to start services."
+else
+  echo "Units installed."
+  sudo systemctl start kiel.target
+  sudo systemctl start homeguarantee.service
+fi
 
