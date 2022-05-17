@@ -25,7 +25,7 @@ sudo mkdir -p /etc/kiel.d
 sudo cp default.toml /etc/kiel.d/default.toml
 sudo cp .env /etc/kiel.d/.env
 
-if [ $1 == 0 ]; then
+if [ "$1" == 0 ]; then
   echo "Units installed. Execute 'sudo systemctl start kiel.target' to start services."
 else
   echo "Units installed."
