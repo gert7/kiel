@@ -1,6 +1,9 @@
 use std::ops::Range;
 
-use chrono_tz::{Europe::{Berlin, Tallinn}, Tz};
+use chrono_tz::{
+    Europe::{Berlin, Tallinn},
+    Tz,
+};
 use lazy_static::lazy_static;
 use rust_decimal_macros::dec;
 
@@ -17,15 +20,14 @@ pub const PLANNING_TZ: Tz = MARKET_TZ;
 pub const HOURS_OF_DAY: Range<u8> = Range { start: 0, end: 24 };
 
 lazy_static! {
-
     pub static ref DAY_TARIFF_PRICE: CentsPerKwh = CentsPerKwh(dec!(6.65));
-
     pub static ref NIGHT_TARIFF_PRICE: CentsPerKwh = CentsPerKwh(dec!(3.86));
-
     pub static ref DAY_TARIFF_PRICE_JUNE_2022: CentsPerKwh = CentsPerKwh(dec!(7.31));
-
     pub static ref NIGHT_TARIFF_PRICE_JUNE_2022: CentsPerKwh = CentsPerKwh(dec!(4.25));
-
+    pub static ref DAY_TARIFF_PRICE_OCTOBER_2022: CentsPerKwh = CentsPerKwh(dec!(7.53));
+    pub static ref NIGHT_TARIFF_PRICE_OCTOBER_2022: CentsPerKwh = CentsPerKwh(dec!(4.38));
+    pub static ref DAY_TARIFF_PRICE_DECEMBER_2022: CentsPerKwh = CentsPerKwh(dec!(7.68));
+    pub static ref NIGHT_TARIFF_PRICE_DECEMBER_2022: CentsPerKwh = CentsPerKwh(dec!(4.47));
 }
 
 pub const CVAR_CONFIG_FAILURE_COUNT: &str = "config_failures";

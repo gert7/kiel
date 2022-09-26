@@ -8,7 +8,7 @@ import 'day_screen.dart';
 
 class DayScreenTable extends StatelessWidget {
   static const rowStyleBold =
-  TextStyle(fontSize: 16, fontWeight: FontWeight.bold);
+      TextStyle(fontSize: 16, fontWeight: FontWeight.bold);
   static const rowStyle = TextStyle(fontSize: 16);
 
   final DaySummary summary;
@@ -29,11 +29,10 @@ class DayScreenTable extends StatelessWidget {
   bool isCurrentHour(TZDateTime localMoment) {
     final now = DateTime.now();
     final nowTZ = TZDateTime.from(now, localTimeZone());
-    if(localMoment.year == nowTZ.year &&
+    if (localMoment.year == nowTZ.year &&
         localMoment.day == nowTZ.day &&
         localMoment.month == nowTZ.month &&
-        localMoment.hour == nowTZ.hour
-    ) {
+        localMoment.hour == nowTZ.hour) {
       return true;
     } else {
       return false;
@@ -41,10 +40,13 @@ class DayScreenTable extends StatelessWidget {
   }
 
   List<Color?> getRowColor(int state) {
-    switch(state) {
-      case 1: return [Colors.green[300], Colors.green[400]];
-      case 0: return [Colors.red[300], Colors.red[400]];
-      default: return [Colors.grey[300], Colors.grey[400]];
+    switch (state) {
+      case 1:
+        return [Colors.green[300], Colors.green[400]];
+      case 0:
+        return [Colors.red[300], Colors.red[400]];
+      default:
+        return [Colors.grey[300], Colors.grey[400]];
     }
   }
 
@@ -52,7 +54,7 @@ class DayScreenTable extends StatelessWidget {
     final rows = <DataRow>[];
     // final now = DateTime.now().add(Duration(days: daysOffset));
     final marketDayStart =
-    TZDateTime(marketTimeZone(), moment.year, moment.month, moment.day);
+        TZDateTime(marketTimeZone(), moment.year, moment.month, moment.day);
 
     for (var hour = 0; hour < 24; hour++) {
       final offsetHour = marketDayStart.add(Duration(hours: hour));
@@ -127,11 +129,15 @@ class DayScreenTable extends StatelessWidget {
           child: SingleChildScrollView(
             child: SizedBox(
               width: double.infinity,
-              child: DataTable(columns: const [
-                DataColumn(label: Text("Tund")),
-                DataColumn(label: Text("Seisund")),
-                DataColumn(label: Text("€/MWh sh. tariif"))
-              ], rows: rows),
+              child: DataTable(
+                  sortColumnIndex: 0,
+                  sortAscending: true,
+                  columns: const [
+                    DataColumn(label: Text("Tund")),
+                    DataColumn(label: Text("Seisund")),
+                    DataColumn(label: Text("€/MWh sh. tariif"))
+                  ],
+                  rows: rows),
             ),
           ),
         ),
