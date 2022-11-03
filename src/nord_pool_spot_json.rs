@@ -1,7 +1,7 @@
-use std::{collections::BTreeMap, env}; 
 use color_eyre::eyre;
 use color_eyre::eyre::eyre;
 use json::JsonValue;
+use std::{collections::BTreeMap, env};
 
 use crate::{
     constants::MARKET_TZ,
@@ -39,19 +39,21 @@ pub fn decode_json(body: &str) -> eyre::Result<PriceMatrix> {
                     }
 
                     let price = cell["Value"].as_str().ok_or(eyre!("Missing Value"))?;
-                    let moment = retrieve_datetime(dateline, hour, &MARKET_TZ)?;
+                    let moment = match retrieve_datetime(dateline, hour, &MARKET_TZ) {
+                        Ok(v) => v,
+                        Err(_) => continue,
+                    };
+
                     match convert_price_to_decimal(price) {
-                        Ok(dec_price) => {
-                            match date_map.get_mut(dateline).unwrap() {
-                                Some(cells) => cells.cells.0.push(PriceCell {
-                                    price: PricePerMwh(dec_price),
-                                    moment,
-                                    tariff_price: Some(PriceCell::get_tariff_price_current(moment)),
-                                    market_hour: hour,
-                                }),
-                                None => todo!(),
-                            }
-                        }
+                        Ok(dec_price) => match date_map.get_mut(dateline).unwrap() {
+                            Some(cells) => cells.cells.0.push(PriceCell {
+                                price: PricePerMwh(dec_price),
+                                moment,
+                                tariff_price: Some(PriceCell::get_tariff_price_current(moment)),
+                                market_hour: hour,
+                            }),
+                            None => todo!(),
+                        },
                         Err(_) => continue,
                     }
                 }
