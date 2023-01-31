@@ -28,6 +28,8 @@ lazy_static! {
     pub static ref NIGHT_TARIFF_PRICE_OCTOBER_2022: CentsPerKwh = CentsPerKwh(dec!(4.38));
     pub static ref DAY_TARIFF_PRICE_DECEMBER_2022: CentsPerKwh = CentsPerKwh(dec!(7.68));
     pub static ref NIGHT_TARIFF_PRICE_DECEMBER_2022: CentsPerKwh = CentsPerKwh(dec!(4.47));
+    pub static ref DAY_TARIFF_PRICE_JANUARY_2023: CentsPerKwh = CentsPerKwh(dec!(8.68));
+    pub static ref NIGHT_TARIFF_PRICE_JANUARY_2023: CentsPerKwh = CentsPerKwh(dec!(5.05));
 }
 
 pub const CVAR_CONFIG_FAILURE_COUNT: &str = "config_failures";

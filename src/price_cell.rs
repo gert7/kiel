@@ -3,7 +3,7 @@ use std::ops::Range;
 use crate::{
     constants::{
         DAY_TARIFF_PRICE_DECEMBER_2022, DAY_TARIFF_PRICE_OCTOBER_2022,
-        NIGHT_TARIFF_PRICE_DECEMBER_2022, NIGHT_TARIFF_PRICE_OCTOBER_2022,
+        NIGHT_TARIFF_PRICE_DECEMBER_2022, NIGHT_TARIFF_PRICE_OCTOBER_2022, DAY_TARIFF_PRICE_JANUARY_2023, NIGHT_TARIFF_PRICE_JANUARY_2023,
     },
     price_matrix::DaySlice,
     schema::price_cells,
@@ -60,24 +60,24 @@ impl PriceCell {
     fn day_tariff_price<'a>(moment: &Date<Tz>) -> &'a CentsPerKwh {
         if moment < &MARKET_TZ.ymd(2022, 6, 1) {
             &DAY_TARIFF_PRICE
-        } else if moment < &MARKET_TZ.ymd(2022, 10, 1) {
-            &DAY_TARIFF_PRICE_JUNE_2022
         } else if moment < &MARKET_TZ.ymd(2022, 12, 1) {
             &DAY_TARIFF_PRICE_OCTOBER_2022
-        } else {
+        } else if moment < &MARKET_TZ.ymd(2023, 1, 1){
             &DAY_TARIFF_PRICE_DECEMBER_2022
+        } else {
+            &DAY_TARIFF_PRICE_JANUARY_2023
         }
     }
 
     fn night_tariff_price<'a>(moment: &Date<Tz>) -> &'a CentsPerKwh {
         if moment < &MARKET_TZ.ymd(2022, 6, 1) {
             &NIGHT_TARIFF_PRICE
-        } else if moment < &MARKET_TZ.ymd(2022, 10, 1) {
-            &NIGHT_TARIFF_PRICE_JUNE_2022
         } else if moment < &MARKET_TZ.ymd(2022, 12, 1) {
             &NIGHT_TARIFF_PRICE_OCTOBER_2022
-        } else {
+        } else if moment < &MARKET_TZ.ymd(2022, 1, 1) {
             &NIGHT_TARIFF_PRICE_DECEMBER_2022
+        } else {
+            &NIGHT_TARIFF_PRICE_JANUARY_2023
         }
     }
 
