@@ -113,7 +113,7 @@ pub fn is_national_holiday(date: &Date<Tz>) -> bool {
 
 #[cfg(test)]
 mod test {
-    use chrono::{Date, TimeZone};
+    use chrono::TimeZone;
     use chrono_tz::Europe::Tallinn;
 
     use super::*;

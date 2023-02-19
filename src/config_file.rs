@@ -4,7 +4,7 @@ use diesel::{prelude::*, update, PgConnection};
 use serde::Deserialize;
 
 use crate::{
-    constants::{CVAR_CONFIG_FAILURE_COUNT, DEFAULT_CONFIG_FILENAME},
+    constants::CVAR_CONFIG_FAILURE_COUNT,
     convars::{ConvarInt, NewConvarInt},
     schema::day_configurations,
     strategy::{
@@ -260,7 +260,7 @@ struct NewConfigFileDB<'a> {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::database;
+    use crate::{database, constants::DEFAULT_CONFIG_FILENAME};
 
     use super::*;
     use crate::schema::day_configurations::dsl::*;

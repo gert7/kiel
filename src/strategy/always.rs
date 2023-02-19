@@ -10,9 +10,11 @@ use super::{HourStrategy, PowerState, PriceChangeUnit};
 pub struct AlwaysOnStrategy;
 
 impl HourStrategy for AlwaysOnStrategy {
-    fn plan_hour(&self, datetime: &DateTime<Tz>) -> PowerState {
+
+    fn plan_hour(&self, _: &DateTime<Tz>) -> PowerState {
         PowerState::On
     }
+    
     fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>> {
         day_prices
             .0
@@ -30,7 +32,7 @@ impl HourStrategy for AlwaysOnStrategy {
 pub struct AlwaysOffStrategy;
 
 impl HourStrategy for AlwaysOffStrategy {
-    fn plan_hour(&self, datetime: &DateTime<Tz>) -> PowerState {
+    fn plan_hour(&self, _: &DateTime<Tz>) -> PowerState {
         PowerState::Off
     }
     fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>> {

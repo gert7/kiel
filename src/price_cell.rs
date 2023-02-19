@@ -16,9 +16,8 @@ use rust_decimal::Decimal;
 
 use crate::{
     constants::{
-        DAY_TARIFF_PRICE, DAY_TARIFF_PRICE_JUNE_2022, MARKET_TZ, NIGHT_TARIFF_PRICE,
-        NIGHT_TARIFF_PRICE_JUNE_2022,
-    },
+        DAY_TARIFF_PRICE, MARKET_TZ, NIGHT_TARIFF_PRICE,
+        },
     price_matrix::{CentsPerKwh, PricePerMwh},
     tariff::Tariff,
 };

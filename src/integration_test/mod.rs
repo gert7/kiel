@@ -9,7 +9,7 @@ mod tests {
         config_file::{tests::insert_good_cfg, ConfigFile, DayBasePlan},
         constants::{DEFAULT_CONFIG_FILENAME, MARKET_TZ, LOCAL_TZ, PLANNING_TZ},
         database::establish_connection,
-        price_cell::{self, PriceCell},
+        price_cell::PriceCell,
         sample_data,
         schema::{
             convar_ints, convar_strings, day_configurations, power_states, price_cells,

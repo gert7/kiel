@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Timelike, Utc, Weekday};
+use chrono::{DateTime, Datelike, Timelike, Weekday};
 use chrono_tz::Tz;
 
 use crate::{constants::LOCAL_TZ, holidays::is_national_holiday};
