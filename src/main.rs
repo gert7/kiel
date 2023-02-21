@@ -63,7 +63,7 @@ fn get_power_state_exact(
     None
 }
 
-async fn planner_main<'a>(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Result<()> {
+fn planner_main<'a>(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Result<()> {
     let connection = database::establish_connection();
     let (conf_id, config) =
         ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
@@ -121,7 +121,7 @@ async fn enact_now(now: DateTime<Tz>) -> eyre::Result<()> {
 }
 
 #[tokio::main]
-#[doc(hidden)]
+// #[doc(hidden)]
 async fn main() -> color_eyre::Result<()> {
     dotenv::from_path("/etc/kiel.d/.env")?;
     color_eyre::install()?;
@@ -145,8 +145,8 @@ async fn main() -> color_eyre::Result<()> {
     };
 
     let now = Utc::now().with_timezone(&PLANNING_TZ);
-    let today = now.date();
-    println!("today {}", today);
+    // let today = now.date_naive();
+    // println!("today {}", today);
     let tomorrow = now.add(chrono::Duration::days(1));
     println!("tomorrow {}", tomorrow);
 
@@ -156,6 +156,9 @@ async fn main() -> color_eyre::Result<()> {
         fetch_main().await?;
         force_recalculate = true;
     } else if second == "--hour" {
+        // Does nothing special in the condition itself.
+        // Do not delete
+        //
         // hour_main().await?;
     } else if second == "--hour-force" {
         println!("Forcing recalculation...");
@@ -173,13 +176,12 @@ async fn main() -> color_eyre::Result<()> {
         eprintln!("Unknown mode: {}", second);
     }
 
-    planner_main(force_recalculate, now).await?;
-    planner_main(force_recalculate, tomorrow).await?;
+    planner_main(force_recalculate, now)?;
+    planner_main(force_recalculate, tomorrow)?;
     enact_now(now).await?;
 
     lockfile
-        .write(b"rub a dub dub thanks for the grub")
-        .unwrap();
+        .write(b"rub a dub dub thanks for the grub")?;
 
     Ok(())
 }

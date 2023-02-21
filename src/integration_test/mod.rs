@@ -100,6 +100,6 @@ mod tests {
         let sample_day = sample_data::sample_day(&start_date, 0, 24, &mut thread_rng());
         PriceCell::insert_cells_into_database(&connection, &sample_day.0).unwrap();
         let now = Utc::now().with_timezone(&PLANNING_TZ);
-        planner_main(true, now).await.unwrap();
+        planner_main(true, now).unwrap();
     }
 }

@@ -74,7 +74,7 @@ pub struct ConfigFile {
 
 impl ConfigFile {
     pub fn decode_config(file: &str) -> eyre::Result<ConfigFile> {
-        println!("{}", file);
+        // println!("{}", file);
         let config_file = toml::from_str::<ConfigFile>(file)?;
         Ok(config_file)
     }
@@ -142,7 +142,7 @@ impl ConfigFile {
         use crate::schema::day_configurations::dsl::*;
         for cfdb in cfgs {
             let attempt = Self::decode_config(&cfdb.toml);
-            println!("attempt");
+            println!("Attempt");
             match attempt {
                 Ok(good) => {
                     if !cfdb.tried {
