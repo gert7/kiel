@@ -7,3 +7,7 @@ all:
 nostart:
 	cargo build --release
 	sudo ./install_units.sh 0
+
+onlystart:
+	sudo ./install_units.sh 1
+	sudo docker container start homeassistant

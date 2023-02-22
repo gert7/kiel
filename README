@@ -1,0 +1,4 @@
+install_units.sh [start_services] [nowatch]
+- start_services: if 1, starts services
+- nowatch: if "nowatch" doesn't fetch any data from nordpool
+

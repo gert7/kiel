@@ -34,3 +34,9 @@ else
   sudo systemctl start homeguarantee.service
 fi
 
+if [ "$2" = "nofetch" ]
+then
+  sudo systemctl stop kielfetch.timer
+  sudo systemctl stop kielfetch.service
+fi
+
