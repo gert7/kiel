@@ -3,7 +3,7 @@ Description=Runs something
 Requires=kieltimer.timer
 
 [Service]
-ExecStart=/usr/local/bin/kiel --hour
+ExecStart=/usr/local/bin/kiel hour --enact
 
 [Install]
 WantedBy=kiel.target

@@ -26,14 +26,14 @@ class IPCheckResult {
       final response = await request.close();
       final stringData = await response.transform(utf8.decoder).join();
       if (stringData == "Kiel says hello, $testString!") {
-        print("kiel says hello");
+        debugPrint("kiel says hello");
         return IPCheckResult(ip, true);
       } else {
-        print("connection but no hello");
+        debugPrint("connection but no hello");
         return IPCheckResult(ip, false);
       }
     } catch (e) {
-      print(e);
+      debugPrint("$e");
       if (context != null) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.toString()),
@@ -106,7 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
               SizedBox(
                 width: 350.0,
                 child: TextField(
-                  style: Theme.of(context).textTheme.headline4,
+                  style: Theme.of(context).textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                   controller: _ipController,
                   inputFormatters: [_ipFormatter.getFormatter()],
@@ -146,7 +146,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     padding: const EdgeInsets.all(16.0),
                     child: Text(
                       "Sisene",
-                      style: Theme.of(context).textTheme.headline5,
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
                   ))
             ],

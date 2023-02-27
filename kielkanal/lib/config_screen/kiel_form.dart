@@ -100,18 +100,18 @@ class KielForm extends StatelessWidget {
     return SingleChildScrollView(
       child: Consumer<ConfigController>(builder: (context, controller, child) {
         List<ConfigControllerInput> list = [];
-        print("Rebuilding KielForm");
+        debugPrint("Rebuilding KielForm");
         final day = controller.day(dayNumber);
         final rows = <Widget>[];
 
         if (rubric == KielFormType.base) {
           list = day.baseItems;
-          rows.add(rubricDropDown(
-              context, dayNumber, day.baseMode, "Alused", controller.selectBase, bases));
+          rows.add(rubricDropDown(context, dayNumber, day.baseMode, "Alused",
+              controller.selectBase, bases));
         } else if (rubric == KielFormType.strategy) {
           list = day.strategyItems;
-          rows.add(rubricDropDown(context, dayNumber, day.strategyMode, "Strateegia",
-              controller.selectStrategy, strategies));
+          rows.add(rubricDropDown(context, dayNumber, day.strategyMode,
+              "Strateegia", controller.selectStrategy, strategies));
         }
 
         for (final input in list) {
@@ -120,7 +120,7 @@ class KielForm extends StatelessWidget {
           }
         }
 
-        print(rows);
+        debugPrint("$rows");
 
         return Column(
           children: rows,

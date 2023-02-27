@@ -46,11 +46,11 @@ class ConfigControllerTextInput extends ConfigControllerInput {
     final controller =
         TextEditingController.fromValue(TextEditingValue(text: textValue));
     controller.addListener(() {
-      print(controller.text);
-      print("reckoning");
+      debugPrint(controller.text);
+      debugPrint("reckoning");
       notify();
     });
-    print("cloning $textInput");
+    debugPrint("cloning $textInput");
     return ConfigControllerTextInput(schema, textInput, controller);
   }
 }
@@ -120,7 +120,8 @@ class ControllerDay extends ChangeNotifier {
 
   bool isValid() {
     final baseItemsInvalid = baseItems.any((element) => !element.isValid());
-    final strategyItemsInvalid = strategyItems.any((element) => !element.isValid());
+    final strategyItemsInvalid =
+        strategyItems.any((element) => !element.isValid());
     return !(baseItemsInvalid || strategyItemsInvalid);
   }
 

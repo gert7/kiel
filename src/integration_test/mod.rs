@@ -4,10 +4,11 @@ mod tests {
     use color_eyre::eyre;
     use diesel::{prelude::*, PgConnection};
     use rand::thread_rng;
+    use serial_test::serial;
 
     use crate::{
         config_file::{tests::insert_good_cfg, ConfigFile, DayBasePlan},
-        constants::{DEFAULT_CONFIG_FILENAME, MARKET_TZ, LOCAL_TZ, PLANNING_TZ},
+        constants::{MARKET_TZ, LOCAL_TZ, PLANNING_TZ, DEFAULT_TEST_FILENAME},
         database::establish_connection,
         price_cell::PriceCell,
         sample_data,
@@ -28,6 +29,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn integrate() {
         let connection = establish_connection();
         clear_all_tables(&connection).unwrap();
@@ -38,7 +40,7 @@ mod tests {
         insert_good_cfg(&connection);
 
         let (cfdb, config) =
-            ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME).unwrap();
+            ConfigFile::fetch_with_default(&connection, DEFAULT_TEST_FILENAME).unwrap();
         assert!(cfdb.is_some());
         let cfdb_id = cfdb.unwrap().id;
 
@@ -58,15 +60,17 @@ mod tests {
         PowerStateDB::insert_day_into_database(&connection, &strategy_result, Some(cfdb_id));
 
         for h in 0..=13 {
-            println!("{}", h);
+            println!("{} {:?}", h, strategy_result[h].state);
             assert!(strategy_result[h].state == PowerState::On);
         }
 
         for h in 14..=15 {
+            println!("{} {:?}", h, strategy_result[h].state);
             assert!(strategy_result[h].state == PowerState::Off);
         }
 
         for h in 16..=23 {
+            println!("{} {:?}", h, strategy_result[h].state);
             assert!(strategy_result[h].state == PowerState::On);
         }
 
@@ -93,6 +97,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[serial]
     async fn integrate_tomorrow() {
         let connection = establish_connection();
         clear_all_tables(&connection).unwrap();

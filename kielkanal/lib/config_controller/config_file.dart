@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:kielkanal/config_controller/base.dart';
 import 'package:kielkanal/config_controller/sample.dart';
 import 'package:kielkanal/config_controller/strategy.dart';
@@ -76,7 +77,7 @@ class ConfigFile {
 
   Map toMap() {
     final map = {};
-    for(int i = 0; i < days.length; i++) {
+    for (int i = 0; i < days.length; i++) {
       map[dayNamesEnglish[i].toLowerCase()] = days[i].toMap();
     }
     return map;
@@ -84,7 +85,7 @@ class ConfigFile {
 }
 
 ConfigFile getSample() {
-  print("getting sample...");
+  debugPrint("getting sample...");
   final decoded = TomlDocument.parse(sampleTOML).toMap();
   return ConfigFile.fromMap(decoded);
 }

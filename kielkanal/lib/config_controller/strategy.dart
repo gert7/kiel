@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import 'package:kielkanal/config_controller/schema.dart';
 
 import 'config_controller.dart';

@@ -260,6 +260,8 @@ struct NewConfigFileDB<'a> {
 
 #[cfg(test)]
 pub mod tests {
+    use serial_test::serial;
+
     use crate::{database, constants::DEFAULT_CONFIG_FILENAME};
 
     use super::*;
@@ -297,6 +299,7 @@ pub mod tests {
     }
 
     #[test]
+    #[serial]
     fn loads_from_database() {
         let connection = database::establish_connection();
         clear_table(&connection);
@@ -306,6 +309,7 @@ pub mod tests {
     }
 
     #[test]
+    #[serial]
     fn loads_default_with_empty_database() {
         let connection = database::establish_connection();
         clear_table(&connection);
@@ -314,6 +318,7 @@ pub mod tests {
     }
 
     #[test]
+    #[serial]
     #[should_panic]
     fn fails_with_wrong_default_config() {
         let connection = database::establish_connection();
@@ -322,6 +327,7 @@ pub mod tests {
     }
 
     #[test]
+    #[serial]
     fn marks_broken_configs_correctly() {
         let connection = database::establish_connection();
         clear_table(&connection);

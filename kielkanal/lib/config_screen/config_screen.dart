@@ -194,7 +194,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
   void confirmButtonAction(ConfigController controller) {
     final map = controller.toMap();
     final toml = TomlDocument.fromMap(map);
-    print(toml);
+    debugPrint("$toml");
     ReloadNotification("Kinnitan muudatused", toml).dispatch(context);
   }
 

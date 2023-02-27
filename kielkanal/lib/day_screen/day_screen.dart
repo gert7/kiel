@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:kielkanal/database/day_summary_db.dart';
 import 'package:kielkanal/day_screen/day_table.dart';
 import 'package:timezone/timezone.dart';
@@ -31,7 +30,7 @@ class DayScreenDraft extends StatefulWidget {
 
   static TZDateTime marketDayFromNow(int dayOffset) {
     final marketNow =
-    TZDateTime.now(marketTimeZone()).add(Duration(days: dayOffset));
+        TZDateTime.now(marketTimeZone()).add(Duration(days: dayOffset));
     return TZDateTime(
         marketTimeZone(), marketNow.year, marketNow.month, marketNow.day);
   }
@@ -45,7 +44,7 @@ class DayScreenDraft extends StatefulWidget {
 class _DayScreenDraftState extends State<DayScreenDraft>
     with SingleTickerProviderStateMixin {
   final _daysStreamController =
-  StreamController<TodayTomorrowSummary>.broadcast();
+      StreamController<TodayTomorrowSummary>.broadcast();
 
   late TZDateTime today;
   late TZDateTime tomorrow;
@@ -81,28 +80,30 @@ class _DayScreenDraftState extends State<DayScreenDraft>
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<TodayTomorrowSummary>(builder: (context, snapshot) {
-      if (snapshot.hasData) {
-        final data = snapshot.data!;
-        return Column(
-          children: [
-            TabBar(
-              tabs: tabs,
-              controller: _tabController,
-              labelColor: Colors.black,
-            ),
-            Expanded(
-              child: TabBarView(controller: _tabController, children: [
-                DayScreenTable(data.today(), today),
-                DayScreenTable(data.tomorrow(), tomorrow),
-              ]),
-            ),
-          ],
-        );
-      } else {
-        return const Center(child: CircularProgressIndicator());
-      }
-    },
-    stream: _daysStreamController.stream,);
+    return StreamBuilder<TodayTomorrowSummary>(
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          final data = snapshot.data!;
+          return Column(
+            children: [
+              TabBar(
+                tabs: tabs,
+                controller: _tabController,
+                labelColor: Colors.black,
+              ),
+              Expanded(
+                child: TabBarView(controller: _tabController, children: [
+                  DayScreenTable(data.today(), today),
+                  DayScreenTable(data.tomorrow(), tomorrow),
+                ]),
+              ),
+            ],
+          );
+        } else {
+          return const Center(child: CircularProgressIndicator());
+        }
+      },
+      stream: _daysStreamController.stream,
+    );
   }
 }

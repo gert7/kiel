@@ -31,7 +31,7 @@ class _MainScreenDBFilterState extends State<MainScreenDBFilter> {
 
   void loadFromDatabase() async {
     _streamController.add(null);
-    print("Fetching from database");
+    debugPrint("Fetching from database");
     final result = await fetchConfigFileFromDatabase(widget.ip);
     _streamController.add(result);
   }
@@ -55,7 +55,7 @@ class _MainScreenDBFilterState extends State<MainScreenDBFilter> {
       onNotification: (notification) {
         final toml = notification.toml;
 
-        if(toml != null) {
+        if (toml != null) {
           loadingString = notification.message;
           sendOffConfiguration(toml);
         } else {
@@ -69,19 +69,22 @@ class _MainScreenDBFilterState extends State<MainScreenDBFilter> {
           initialData: null,
           builder: (BuildContext context, snapshot) {
             final data = snapshot.data;
-            print("Rebuilding MainScreenDBFilter...");
+            debugPrint("Rebuilding MainScreenDBFilter...");
             if (data != null) {
               return MainScreen(widget.ip, data);
             } else {
               return Scaffold(
                 body: Center(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const CircularProgressIndicator(),
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(loadingString ?? "Laadimine", style: Theme.of(context).textTheme.subtitle2,),
+                      child: Text(
+                        loadingString ?? "Laadimine",
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
                     )
                   ],
                 )),
@@ -99,10 +102,10 @@ class MainScreen extends StatefulWidget {
   const MainScreen(this.ip, this.configFile, {Key? key}) : super(key: key);
 
   List get options => <Widget>[
-    const ConfigScreen(),
-    DayScreenDraft(ip),
-    // const ConfigScreen()
-  ];
+        const ConfigScreen(),
+        DayScreenDraft(ip),
+        // const ConfigScreen()
+      ];
 
   @override
   State<MainScreen> createState() => _MainScreenState();

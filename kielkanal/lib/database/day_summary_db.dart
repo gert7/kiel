@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:kielkanal/database/connection.dart';
 
 class PowerStateDB {
@@ -17,7 +18,7 @@ class PowerStateDB {
     final results = await connection.mappedResultsQuery(
         "SELECT * FROM $tname WHERE moment_utc >= @startTime AND moment_utc < @endTime ORDER BY id DESC",
         substitutionValues: {"startTime": startUTC, "endTime": endUTC});
-    print("start time: $startUTC end time: $endUTC");
+    debugPrint("start time: $startUTC end time: $endUTC");
 
     return results.map<PowerStateDB>((jRow) {
       final row = jRow[tname]!;
@@ -49,7 +50,7 @@ class PriceCellDB {
         "SELECT * FROM $tname WHERE moment_utc >= @startTime AND moment_utc < @endTime ORDER BY id DESC",
         substitutionValues: {"startTime": startUTC, "endTime": endUTC});
 
-    print("Number of results for prices: ${results.length}");
+    debugPrint("Number of results for prices: ${results.length}");
 
     return results.map<PriceCellDB>((jRow) {
       final row = jRow[tname]!;

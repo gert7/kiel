@@ -21,7 +21,7 @@ mod strategy;
 mod switch_records;
 mod tariff;
 
-use std::{io::Write, ops::Add};
+use std::{io::Write, ops::Add, process::exit};
 
 use chrono::{DateTime, Datelike, Utc};
 use chrono_tz::Tz;
@@ -136,11 +136,12 @@ async fn main() -> color_eyre::Result<()> {
         Some(v) => v,
         None => {
             eprintln!("\nPlease specify an execution mode:");
-            eprintln!("  --fetch");
-            eprintln!("  --hour");
-            eprintln!("  --hour-force");
-            eprintln!("  --reinsert-config [FILENAME]");
-            "".to_owned()
+            eprintln!("  fetch");
+            eprintln!("  hour");
+            eprintln!("  hour-force");
+            eprintln!("  reinsert-config [FILENAME]");
+            eprintln!("");
+            exit(1)
         }
     };
 
@@ -152,18 +153,18 @@ async fn main() -> color_eyre::Result<()> {
 
     let mut force_recalculate = false;
 
-    if second == "--fetch" {
+    if second == "fetch" {
         fetch_main().await?;
         force_recalculate = true;
-    } else if second == "--hour" {
+    } else if second == "hour" {
         // Does nothing special in the condition itself.
         // Do not delete
         //
         // hour_main().await?;
-    } else if second == "--hour-force" {
+    } else if second == "hour-force" {
         println!("Forcing recalculation...");
         force_recalculate = true;
-    } else if second == "--reinsert-config" {
+    } else if second == "reinsert-config" {
         let third = std::env::args().nth(2);
         let filename = third.unwrap_or("default.toml".to_owned());
         println!("Reinserting crate-local configuration: {}", filename);
@@ -174,14 +175,21 @@ async fn main() -> color_eyre::Result<()> {
     } else {
         // let a = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
         eprintln!("Unknown mode: {}", second);
+        exit(1)
     }
 
     planner_main(force_recalculate, now)?;
     planner_main(force_recalculate, tomorrow)?;
-    enact_now(now).await?;
 
-    lockfile
-        .write(b"rub a dub dub thanks for the grub")?;
+    let enact = std::env::args().find(|v| v == "--enact").is_some();
+
+    if enact {
+        enact_now(now).await?;
+    } else {
+        println!("\nDry run complete. Specify --enact to toggle power.");
+    }
+
+    lockfile.write(b"rub a dub dub thanks for the grub")?;
 
     Ok(())
 }

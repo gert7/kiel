@@ -1,4 +1,6 @@
-table! {
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
     convar_ints (id) {
         id -> Int4,
         key -> Text,
@@ -7,7 +9,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     convar_strings (id) {
         id -> Int4,
         key -> Text,
@@ -16,7 +18,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     day_configurations (id) {
         id -> Int4,
         toml -> Text,
@@ -26,7 +28,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     power_states (id) {
         id -> Int4,
         moment_utc -> Timestamptz,
@@ -36,7 +38,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     price_cells (id) {
         id -> Int4,
         price_mwh -> Numeric,
@@ -47,7 +49,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     switch_records (id) {
         id -> Int4,
         state -> Int4,
@@ -55,7 +57,7 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(
+diesel::allow_tables_to_appear_in_same_query!(
     convar_ints,
     convar_strings,
     day_configurations,

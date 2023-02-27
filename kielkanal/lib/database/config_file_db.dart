@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:kielkanal/config_controller/config_file.dart';
 import 'package:kielkanal/database/connection.dart';
-import 'package:postgres/postgres.dart';
 import 'package:toml/toml.dart';
 
 class ConfigFileDB {
@@ -16,12 +16,12 @@ Future<ConfigFile?> fetchConfigFileFromDatabase(String ip) async {
   final results = await connection.mappedResultsQuery(
       "SELECT $tname.toml FROM $tname WHERE known_broken = false AND tried = true ORDER BY id DESC LIMIT 1");
   if (results.isEmpty) {
-    print("Result empty. Using sample!");
+    debugPrint("Result empty. Using sample!");
     return getSample();
   } else {
     final tomlText = results.first[tname]?["toml"];
     if (tomlText is String) {
-      print(tomlText);
+      debugPrint(tomlText);
       return ConfigFile.fromString(tomlText);
     } else {
       return null;
@@ -37,18 +37,18 @@ Future<bool> sendConfigFileToDatabase(String ip, TomlDocument toml) async {
   final results = await connection.query(
       "INSERT INTO $tname (toml, known_broken, tried) VALUES (@tString, FALSE, FALSE)",
       substitutionValues: {"tString": tomlString});
-  print(results);
+  debugPrint("$results");
 
   final client = HttpClient();
   try {
     final request = await client.get(ip, 8196, "hour");
     final response = await request.close();
     final stringData = await response.transform(utf8.decoder).join();
-    print(stringData);
+    debugPrint(stringData);
 
-    print("hour gotten");
+    debugPrint("hour gotten");
   } catch (e) {
-    print("Erroir");
+    debugPrint("Erroir");
     return false;
   }
 

@@ -12,12 +12,12 @@ class WeeklyOverrideWidget extends StatelessWidget {
     return Consumer<ConfigController>(
       builder: (context, controller, child) {
         final day = controller.day(dayNumber);
-        final bigStyle = Theme.of(context).textTheme.headline4;
+        final bigStyle = Theme.of(context).textTheme.headlineMedium;
 
         final children = <Widget>[];
         for (var hour = 0; hour < 24; hour++) {
           var color = Colors.transparent;
-          if(day.hoursAlwaysOn.contains(hour)) {
+          if (day.hoursAlwaysOn.contains(hour)) {
             color = Colors.greenAccent;
           } else if (day.hoursAlwaysOff.contains(hour)) {
             color = Colors.redAccent;
