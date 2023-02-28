@@ -55,8 +55,10 @@ fn get_power_state_exact(
 ) -> eyre::Result<PowerState> {
     let range = get_hour_start_end(datetime)?;
     for pcu in states {
-        if range.contains(&pcu.moment) {
-            println!("Range found: {:?}: {:?}", pcu.moment, range);
+        let moment = pcu.moment.with_minute(1).ok_or(eyre!("Unable to set 1 minute"))?;
+        // println!("trying on {}", moment);
+        if range.contains(&moment) {
+            println!("Range found: {}: {:?}", moment, range);
             return Ok(pcu.state);
         } else {
             // println!("Range doesn't contain {:?}: {:?}", pcu.moment, range);
@@ -153,6 +155,7 @@ async fn main() -> color_eyre::Result<()> {
     // let now = now.with_hour(0).unwrap().with_minute(0).unwrap().with_second(31).unwrap();
     // let today = now.date_naive();
     println!("Today {}", now);
+    println!("Local time: {}", now.with_timezone(&LOCAL_TZ));
     let tomorrow = now.add(chrono::Duration::days(1));
     println!("Tomorrow {}", tomorrow);
 

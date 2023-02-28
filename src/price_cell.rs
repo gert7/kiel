@@ -15,6 +15,7 @@ use color_eyre::eyre;
 use diesel::{prelude::*, PgConnection};
 use eyre::eyre;
 use eyre::Result;
+use now::DateTimeNow;
 use rust_decimal::Decimal;
 
 use crate::{
@@ -34,36 +35,14 @@ pub struct PriceCell {
 pub fn get_hour_start_end(datetime: &DateTime<Tz>) -> Result<Range<DateTime<Tz>>> {
     // let start = datetime.date().and_hms(datetime.hour(), 0, 0);
     // let end = datetime.date().and_hms(datetime.hour() + 1, 0, 0);
-    let start = datetime
-        .with_minute(0)
-        .ok_or(eyre!("Unable to set minute to 0."))?
-        .with_second(0)
-        .ok_or(eyre!("Unable to set second to 0."))?;
-    let end = datetime
-        .with_hour(datetime.hour() + 1)
-        .ok_or(eyre!("Unable to add 1 hour."))?
-        .with_minute(0)
-        .ok_or(eyre!("Unable to set minute to 0."))?
-        .with_second(0)
-        .ok_or(eyre!("Unable to set second to 0."))?;
+    let start = datetime.beginning_of_hour();
+    let end = datetime.end_of_hour();
     Ok(Range { start, end })
 }
 
 pub fn get_day_start_end(moment: &DateTime<Tz>) -> Result<(DateTime<Tz>, DateTime<Tz>)> {
-    let midnight_start = moment
-        .with_hour(0)
-        .ok_or(eyre!("Unable to set hour to 0"))?
-        .with_minute(0)
-        .ok_or(eyre!("Unable to set minute to 0"))?
-        .with_second(0)
-        .ok_or(eyre!("Unable to set second to 0"))?;
-    let midnight_end = moment
-        .with_hour(23)
-        .ok_or(eyre!("Unable to set hour to 23"))?
-        .with_minute(59)
-        .ok_or(eyre!("Unable to set minute to 59"))?
-        .with_second(59)
-        .ok_or(eyre!("Unable to set second to 59"))?;
+    let midnight_start = moment.beginning_of_day();
+    let midnight_end = moment.end_of_day();
     Ok((midnight_start, midnight_end))
 }
 
