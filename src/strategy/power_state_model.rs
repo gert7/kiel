@@ -1,6 +1,6 @@
 use crate::schema::power_states;
 use crate::{constants::PLANNING_TZ, price_cell::get_day_start_end};
-use chrono::{Date, DateTime, Utc};
+use chrono::{Date, DateTime, Utc, NaiveDate};
 use chrono_tz::Tz;
 use color_eyre::eyre;
 use diesel::{prelude::*, PgConnection};
@@ -50,12 +50,12 @@ impl PowerStateDB {
 
     pub fn get_day_from_database<'a>(
         connection: &'a PgConnection,
-        day: &'a Date<Tz>,
+        day: &'a DateTime<Tz>,
         configuration_id_val: Option<i32>,
     ) -> eyre::Result<Vec<PriceChangeUnit<'a>>> {
         use crate::schema::power_states::dsl::*;
 
-        let (day_start, day_end) = get_day_start_end(&day);
+        let (day_start, day_end) = get_day_start_end(&day)?;
         println!("Day from database: {:?} {:?}", day_start, day_end);
 
         let result = match configuration_id_val {

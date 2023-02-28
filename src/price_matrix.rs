@@ -132,8 +132,8 @@ mod tests {
 
     #[test]
     fn truncates_properly() {
-        let date1 = MARKET_TZ.ymd(2022, 3, 3);
-        let sample_day = sample_day(&date1, 16, 30, &mut thread_rng());
+        let date1 = MARKET_TZ.with_ymd_and_hms(2022, 3, 3, 0, 0, 0).earliest().unwrap();
+        let sample_day = sample_day(&date1, 16, 30, &mut thread_rng()).unwrap();
         assert!(sample_day.0.len() == 30);
         let truncated = truncate_to_24_hours(&sample_day);
         assert!(truncated.0.len() == 24);

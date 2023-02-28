@@ -33,8 +33,8 @@ mod tests {
     fn integrate() {
         let connection = establish_connection();
         clear_all_tables(&connection).unwrap();
-        let start_date = MARKET_TZ.ymd(2022, 3, 13); // Sunday
-        let sample_day = sample_data::sample_day(&start_date, 0, 24, &mut thread_rng());
+        let start_date = MARKET_TZ.with_ymd_and_hms(2022, 3, 13, 0, 0, 0).unwrap(); // Sunday
+        let sample_day = sample_data::sample_day(&start_date, 0, 24, &mut thread_rng()).unwrap();
         PriceCell::insert_cells_into_database(&connection, &sample_day.0).unwrap();
 
         insert_good_cfg(&connection);
@@ -44,11 +44,11 @@ mod tests {
         assert!(cfdb.is_some());
         let cfdb_id = cfdb.unwrap().id;
 
-        let pdb = PriceCell::get_prices_from_db(&connection, &start_date);
+        let pdb = PriceCell::get_prices_from_db(&connection, &start_date).unwrap();
         let config_today = config.get_day(&start_date.weekday());
 
         let base = config_today.base.unwrap_or(DayBasePlan::Tariff(TariffStrategy));
-        let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &start_date);
+        let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &start_date).unwrap();
 
         let mut strategy_result = match config_today.strategy {
             Some(strategy) => strategy.get_day_strategy().plan_day_masked(&base_prices),
@@ -101,8 +101,8 @@ mod tests {
     async fn integrate_tomorrow() {
         let connection = establish_connection();
         clear_all_tables(&connection).unwrap();
-        let start_date = MARKET_TZ.ymd(2022, 3, 13); // Sunday
-        let sample_day = sample_data::sample_day(&start_date, 0, 24, &mut thread_rng());
+        let start_date = MARKET_TZ.with_ymd_and_hms(2022, 3, 13, 0, 0, 0).unwrap(); // Sunday
+        let sample_day = sample_data::sample_day(&start_date, 0, 24, &mut thread_rng()).unwrap();
         PriceCell::insert_cells_into_database(&connection, &sample_day.0).unwrap();
         let now = Utc::now().with_timezone(&PLANNING_TZ);
         planner_main(true, now).unwrap();

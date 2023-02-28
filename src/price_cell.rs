@@ -2,22 +2,23 @@ use std::ops::Range;
 
 use crate::{
     constants::{
-        DAY_TARIFF_PRICE_DECEMBER_2022, DAY_TARIFF_PRICE_OCTOBER_2022,
-        NIGHT_TARIFF_PRICE_DECEMBER_2022, NIGHT_TARIFF_PRICE_OCTOBER_2022, DAY_TARIFF_PRICE_JANUARY_2023, NIGHT_TARIFF_PRICE_JANUARY_2023,
+        DAY_TARIFF_PRICE_DECEMBER_2022, DAY_TARIFF_PRICE_JANUARY_2023,
+        DAY_TARIFF_PRICE_OCTOBER_2022, NIGHT_TARIFF_PRICE_DECEMBER_2022,
+        NIGHT_TARIFF_PRICE_JANUARY_2023, NIGHT_TARIFF_PRICE_OCTOBER_2022,
     },
     price_matrix::DaySlice,
     schema::price_cells,
 };
-use chrono::{Date, DateTime, TimeZone, Timelike, Utc};
+use chrono::{Date, DateTime, NaiveDate, TimeZone, Timelike, Utc};
 use chrono_tz::Tz;
 use color_eyre::eyre;
 use diesel::{prelude::*, PgConnection};
+use eyre::eyre;
+use eyre::Result;
 use rust_decimal::Decimal;
 
 use crate::{
-    constants::{
-        DAY_TARIFF_PRICE, MARKET_TZ, NIGHT_TARIFF_PRICE,
-        },
+    constants::{DAY_TARIFF_PRICE, MARKET_TZ, NIGHT_TARIFF_PRICE},
     price_matrix::{CentsPerKwh, PricePerMwh},
     tariff::Tariff,
 };
@@ -30,17 +31,43 @@ pub struct PriceCell {
     pub market_hour: u32,
 }
 
-pub fn get_hour_start_end(datetime: &DateTime<Tz>) -> Range<DateTime<Tz>> {
-    let start = datetime.date().and_hms(datetime.hour(), 0, 0);
-    let end = datetime.date().and_hms(datetime.hour() + 1, 0, 0);
-    Range { start, end }
+pub fn get_hour_start_end(datetime: &DateTime<Tz>) -> Result<Range<DateTime<Tz>>> {
+    // let start = datetime.date().and_hms(datetime.hour(), 0, 0);
+    // let end = datetime.date().and_hms(datetime.hour() + 1, 0, 0);
+    let start = datetime
+        .with_minute(0)
+        .ok_or(eyre!("Unable to set minute to 0."))?
+        .with_second(0)
+        .ok_or(eyre!("Unable to set second to 0."))?;
+    let end = datetime
+        .with_hour(datetime.hour() + 1)
+        .ok_or(eyre!("Unable to add 1 hour."))?
+        .with_minute(0)
+        .ok_or(eyre!("Unable to set minute to 0."))?
+        .with_second(0)
+        .ok_or(eyre!("Unable to set second to 0."))?;
+    Ok(Range { start, end })
 }
 
-pub fn get_day_start_end(date: &Date<Tz>) -> (DateTime<Tz>, DateTime<Tz>) {
-    let midnight_start = date.and_hms(0, 0, 0);
-    let midnight_end = date.and_hms(23, 59, 59);
-    (midnight_start, midnight_end)
+pub fn get_day_start_end(moment: &DateTime<Tz>) -> Result<(DateTime<Tz>, DateTime<Tz>)> {
+    let midnight_start = moment
+        .with_hour(0)
+        .ok_or(eyre!("Unable to set hour to 0"))?
+        .with_minute(0)
+        .ok_or(eyre!("Unable to set minute to 0"))?
+        .with_second(0)
+        .ok_or(eyre!("Unable to set second to 0"))?;
+    let midnight_end = moment
+        .with_hour(23)
+        .ok_or(eyre!("Unable to set hour to 23"))?
+        .with_minute(59)
+        .ok_or(eyre!("Unable to set minute to 59"))?
+        .with_second(59)
+        .ok_or(eyre!("Unable to set second to 59"))?;
+    Ok((midnight_start, midnight_end))
 }
+
+const UNABLE_ERR: &str = "Unable to construct DateTime that surely must exist!";
 
 impl PriceCell {
     pub fn get_tariff_price(
@@ -56,24 +83,54 @@ impl PriceCell {
         PricePerMwh::from(tariff_value)
     }
 
-    fn day_tariff_price<'a>(moment: &Date<Tz>) -> &'a CentsPerKwh {
-        if moment < &MARKET_TZ.ymd(2022, 6, 1) {
+    fn day_tariff_price<'a>(moment: &DateTime<Tz>) -> &'a CentsPerKwh {
+        if moment
+            < &MARKET_TZ
+                .with_ymd_and_hms(2022, 6, 1, 0, 0, 0)
+                .earliest()
+                .expect(UNABLE_ERR)
+        {
             &DAY_TARIFF_PRICE
-        } else if moment < &MARKET_TZ.ymd(2022, 12, 1) {
+        } else if moment
+            < &MARKET_TZ
+                .with_ymd_and_hms(2022, 12, 1, 0, 0, 0)
+                .earliest()
+                .expect(UNABLE_ERR)
+        {
             &DAY_TARIFF_PRICE_OCTOBER_2022
-        } else if moment < &MARKET_TZ.ymd(2023, 1, 1){
+        } else if moment
+            < &MARKET_TZ
+                .with_ymd_and_hms(2023, 1, 1, 0, 0, 0)
+                .earliest()
+                .expect(UNABLE_ERR)
+        {
             &DAY_TARIFF_PRICE_DECEMBER_2022
         } else {
             &DAY_TARIFF_PRICE_JANUARY_2023
         }
     }
 
-    fn night_tariff_price<'a>(moment: &Date<Tz>) -> &'a CentsPerKwh {
-        if moment < &MARKET_TZ.ymd(2022, 6, 1) {
+    fn night_tariff_price<'a>(moment: &DateTime<Tz>) -> &'a CentsPerKwh {
+        if moment
+            < &MARKET_TZ
+                .with_ymd_and_hms(2022, 6, 1, 0, 0, 0)
+                .earliest()
+                .expect(UNABLE_ERR)
+        {
             &NIGHT_TARIFF_PRICE
-        } else if moment < &MARKET_TZ.ymd(2022, 12, 1) {
+        } else if moment
+            < &MARKET_TZ
+                .with_ymd_and_hms(2022, 12, 1, 0, 0, 0)
+                .earliest()
+                .expect(UNABLE_ERR)
+        {
             &NIGHT_TARIFF_PRICE_OCTOBER_2022
-        } else if moment < &MARKET_TZ.ymd(2022, 1, 1) {
+        } else if moment
+            < &MARKET_TZ
+                .with_ymd_and_hms(2022, 1, 1, 0, 0, 0)
+                .earliest()
+                .expect(UNABLE_ERR)
+        {
             &NIGHT_TARIFF_PRICE_DECEMBER_2022
         } else {
             &NIGHT_TARIFF_PRICE_JANUARY_2023
@@ -83,8 +140,8 @@ impl PriceCell {
     pub fn get_tariff_price_current(moment: DateTime<Tz>) -> PricePerMwh {
         Self::get_tariff_price(
             moment,
-            PriceCell::day_tariff_price(&moment.date()),
-            PriceCell::night_tariff_price(&moment.date()),
+            PriceCell::day_tariff_price(&moment),
+            PriceCell::night_tariff_price(&moment),
         )
     }
 
@@ -103,19 +160,17 @@ impl PriceCell {
         PricePerMwh(price)
     }
 
-    /// Fetches all prices on the given date in its
-    /// given timezone.
-    pub fn get_prices_from_db(connection: &PgConnection, date: &Date<Tz>) -> DaySlice {
+    /// Fetches all prices on the given date in its given timezone.
+    pub fn get_prices_from_db(connection: &PgConnection, date: &DateTime<Tz>) -> Result<DaySlice> {
         use self::price_cells::dsl::*;
 
-        let (midnight_start, midnight_end) = get_day_start_end(date);
+        let (midnight_start, midnight_end) = get_day_start_end(date)?;
         let cells = price_cells
             .filter(moment_utc.ge(&midnight_start))
             .filter(moment_utc.lt(&midnight_end))
-            .load::<PriceCellDB>(connection)
-            .expect("Unable to load price cells");
+            .load::<PriceCellDB>(connection)?;
         let cells = cells.into_iter().map(|pcdb| pcdb.into()).collect();
-        DaySlice(cells)
+        Ok(DaySlice(cells))
     }
 
     pub fn insert_cell_into_database(&self, connection: &PgConnection) -> eyre::Result<()> {
@@ -126,8 +181,7 @@ impl PriceCell {
             .filter(moment_utc.eq(&utc))
             .limit(5)
             .count()
-            .get_result::<i64>(connection)
-            .expect("Unable to count in price_cells table!");
+            .get_result::<i64>(connection)?;
 
         if count == 0 {
             let tariff = self.tariff_price.as_ref().map(|o| &o.0);
@@ -140,8 +194,7 @@ impl PriceCell {
 
             let pcdb: PriceCellDB = diesel::insert_into(price_cells)
                 .values(&new_price)
-                .get_result::<PriceCellDB>(connection)
-                .expect("Failed to insert price.");
+                .get_result::<PriceCellDB>(connection)?;
         }
 
         Ok(())

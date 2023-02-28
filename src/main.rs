@@ -20,15 +20,17 @@ mod schema;
 mod strategy;
 mod switch_records;
 mod tariff;
+mod time;
 
 use std::{io::Write, ops::Add, process::exit};
 
-use chrono::{DateTime, Datelike, Utc};
+use chrono::{DateTime, Datelike, Timelike, Utc};
 use chrono_tz::Tz;
 use color_eyre::eyre;
 use config_file::ConfigFile;
 use constants::{DEFAULT_CONFIG_FILENAME, LOCAL_TZ, PLANNING_TZ};
 
+use eyre::eyre;
 use price_cell::get_hour_start_end;
 use proc_mutex::wait_for_file;
 use strategy::{power_state_model::PowerStateDB, PowerState, PriceChangeUnit};
@@ -50,17 +52,17 @@ async fn fetch_main() -> eyre::Result<()> {
 fn get_power_state_exact(
     datetime: &DateTime<Tz>,
     states: &Vec<PriceChangeUnit>,
-) -> Option<PowerState> {
-    let range = get_hour_start_end(datetime);
+) -> eyre::Result<PowerState> {
+    let range = get_hour_start_end(datetime)?;
     for pcu in states {
         if range.contains(&pcu.moment) {
             println!("Range found: {:?}: {:?}", pcu.moment, range);
-            return Some(pcu.state);
+            return Ok(pcu.state);
         } else {
             // println!("Range doesn't contain {:?}: {:?}", pcu.moment, range);
         }
     }
-    None
+    Err(eyre!("Range not found"))
 }
 
 fn planner_main<'a>(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Result<()> {
@@ -69,28 +71,33 @@ fn planner_main<'a>(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Resu
         ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
     println!("conf id {:?}", conf_id);
 
-    let date = moment.date();
+    let date = moment;
 
     let cached_states = PowerStateDB::get_day_from_database(&connection, &date, Some(conf_id))?;
     let exact_known_state = get_power_state_exact(&moment, &cached_states);
-    println!("Current cached state: {:?}", exact_known_state);
+    // println!("Current cached state: {:?}", exact_known_state);
 
-    if let Some(known_state) = exact_known_state {
-        if !force_recalculate {
-            // apply_power_state(&connection, &known_state).await?;
-            return Ok(());
-        }
+    // if let Some(_) = exact_known_state {
+    //     if !force_recalculate {
+    //         // apply_power_state(&connection, &known_state).await?;
+    //         return Ok(());
+    //     }
+    // }
+
+    if exact_known_state.is_ok() && !force_recalculate {
+        println!("Known state exists, no need to recalculate.");
+        return Ok(());
     }
 
     let config_day = config.get_day(&date.weekday());
     println!("{:?}", config_day);
 
-    let pdb = PriceCell::get_prices_from_db(&connection, &date);
+    let pdb = PriceCell::get_prices_from_db(&connection, &date)?;
 
     let base = config_day
         .base
         .unwrap_or(DayBasePlan::Tariff(TariffStrategy));
-    let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &date);
+    let base_prices = base.get_hour_strategy().plan_day_full(&pdb, &date)?;
 
     let mut strategy_result = match config_day.strategy {
         Some(strategy) => strategy.get_day_strategy().plan_day_masked(&base_prices),
@@ -111,12 +118,9 @@ async fn enact_now(now: DateTime<Tz>) -> eyre::Result<()> {
     let connection = database::establish_connection();
     let (conf_id, _) =
         ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
-    let date = now.date();
-    let cached_states = PowerStateDB::get_day_from_database(&connection, &date, Some(conf_id))?;
-    let exact_known_state = get_power_state_exact(&now, &cached_states);
-    if let Some(known_state) = exact_known_state {
-        apply_power_state(&connection, &known_state).await?;
-    }
+    let cached_states = PowerStateDB::get_day_from_database(&connection, &now, Some(conf_id))?;
+    let exact_known_state = get_power_state_exact(&now, &cached_states)?;
+    apply_power_state(&connection, &exact_known_state).await?;
     Ok(())
 }
 
@@ -146,10 +150,11 @@ async fn main() -> color_eyre::Result<()> {
     };
 
     let now = Utc::now().with_timezone(&PLANNING_TZ);
+    // let now = now.with_hour(0).unwrap().with_minute(0).unwrap().with_second(31).unwrap();
     // let today = now.date_naive();
-    // println!("today {}", today);
+    println!("Today {}", now);
     let tomorrow = now.add(chrono::Duration::days(1));
-    println!("tomorrow {}", tomorrow);
+    println!("Tomorrow {}", tomorrow);
 
     let mut force_recalculate = false;
 

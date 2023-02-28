@@ -1,10 +1,13 @@
-use chrono::{Date, Duration, TimeZone};
+use chrono::{Duration, TimeZone, DateTime, Timelike};
 use chrono_tz::{Tz, Europe::Berlin};
+use color_eyre::Result;
+use now::DateTimeNow;
 use rand::Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use color_eyre::eyre::eyre;
 
-use crate::{price_matrix::{DaySlice, PricePerMwh}, price_cell::PriceCell};
+use crate::{price_matrix::{DaySlice, PricePerMwh}, price_cell::PriceCell, constants::PLANNING_TZ};
 
 fn random_price<R>(rng: &mut R) -> Decimal
 where
@@ -14,22 +17,24 @@ where
     Decimal::new(base.into(), 2)
 }
 
-pub fn sample_day<R>(start_date: &Date<Tz>, start_hour: u32, num_hours: u32, rng: &mut R) -> DaySlice
+pub fn sample_day<R>(start_date: &DateTime<Tz>, start_hour: u32, num_hours: u32, rng: &mut R) -> Result<DaySlice>
 where
     R: Rng + ?Sized,
 {
     let mut vec = vec![];
-    let start_dt = start_date.and_hms(start_hour, 0, 0);
+    let start_dt = start_date.with_hour(start_hour).ok_or(eyre!("Unable to set start_hour"))?;
+    let start_dt = start_dt.beginning_of_hour();
     for h in 0..num_hours {
         let hour = PriceCell {
             price: PricePerMwh(random_price(rng)),
             moment: start_dt + Duration::hours(h.into()),
             tariff_price: None,
+
             market_hour: (h + start_hour) % 24,
         };
         vec.push(hour);
     }
-    DaySlice(vec)
+    Ok(DaySlice(vec))
 }
 
 /// Produces sample day based on static array of decimals.

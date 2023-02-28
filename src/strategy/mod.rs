@@ -1,5 +1,8 @@
 use chrono::{Date, DateTime, Timelike};
 use chrono_tz::Tz;
+use color_eyre::{eyre, Result};
+use eyre::eyre;
+use now::DateTimeNow;
 
 use crate::{constants::HOURS_OF_DAY, price_cell::PriceCell, price_matrix::DaySlice};
 
@@ -64,8 +67,8 @@ pub trait HourStrategy {
     fn plan_day_full<'a>(
         &self,
         day_prices: &'a DaySlice,
-        date: &Date<Tz>,
-    ) -> Vec<PriceChangeUnit<'a>> {
+        date: &DateTime<Tz>,
+    ) -> Result<Vec<PriceChangeUnit<'a>>> {
         let mut vec = self.plan_day(day_prices);
         for hour in HOURS_OF_DAY {
             let hour: u32 = hour.into();
@@ -73,7 +76,8 @@ pub trait HourStrategy {
                 .iter()
                 .find(|pcu| pcu.moment.with_timezone(&date.timezone()).hour() == hour);
             if let None = existing {
-                let moment = date.and_hms(hour, 0, 0);
+                let moment = date.with_hour(hour).ok_or(eyre!("Unable to set hour."))?;
+                let moment = moment.beginning_of_hour();
                 let pcu = PriceChangeUnit {
                     moment,
                     price: None,
@@ -83,7 +87,7 @@ pub trait HourStrategy {
             }
         }
         vec.sort_by(|a, b| a.moment.cmp(&b.moment));
-        vec
+        Ok(vec)
     }
 }
 
@@ -107,9 +111,10 @@ mod tests {
 
     #[test]
     fn fills_gaps() {
-        let date = PLANNING_TZ.ymd(2022, 7, 14);
-        let day = sample_day(&date, 4, 12, &mut thread_rng());
-        let filled = TariffStrategy.plan_day_full(&day, &date);
+        // let date = PLANNING_TZ.ymd(2022, 7, 14);
+        let date = PLANNING_TZ.with_ymd_and_hms(2022, 7, 14, 0, 0, 0).earliest().unwrap();
+        let day = sample_day(&date, 4, 12, &mut thread_rng()).unwrap();
+        let filled = TariffStrategy.plan_day_full(&day, &date).unwrap();
         assert!(filled[0].moment.hour() == 0);
         assert!(filled[0].state == PowerState::On);
         assert!(filled[4].moment.hour() == 4);
