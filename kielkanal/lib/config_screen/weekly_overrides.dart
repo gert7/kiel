@@ -26,8 +26,11 @@ class WeeklyOverrideWidget extends StatelessWidget {
           children.add(Card(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              color: color,
+              // color: color,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8.0), color: color),
               child: InkWell(
+                  borderRadius: BorderRadius.circular(8.0),
                   onTap: () => controller.cycleHour(dayNumber, hour),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

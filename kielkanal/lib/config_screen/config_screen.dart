@@ -64,7 +64,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                             openDay(i);
                           },
                           child: Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(12.0),
                             child: Text(
                               day.toUpperCase(),
                               style: GoogleFonts.secularOne(fontSize: 32),
