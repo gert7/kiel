@@ -36,7 +36,7 @@ impl HourStrategy for TariffStrategy {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{Date, TimeZone, Timelike};
+    use chrono::{TimeZone, Timelike};
     use chrono_tz::Europe::Tallinn;
     use now::DateTimeNow;
     use rand::thread_rng;

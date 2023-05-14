@@ -20,7 +20,6 @@ mod schema;
 mod strategy;
 mod switch_records;
 mod tariff;
-mod time;
 
 use std::{io::Write, ops::Add, process::exit};
 
