@@ -3,7 +3,8 @@ Description=Runs something
 Requires=kieltimer.timer
 
 [Service]
-ExecStart=/usr/local/bin/kiel hour --enact
+Environment="RUST_BACKTRACE=1"
+ExecStart=/usr/local/bin/kiel hour --enact 
 
 [Install]
 WantedBy=kiel.target

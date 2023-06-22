@@ -3,7 +3,8 @@ use std::process::Command;
 
 fn execute_hour() {
     let output = Command::new("/usr/local/bin/kiel")
-        .arg("--hour-force")
+        .arg("hour-force")
+        .arg("--enact")
         .output();
     match output {
         Err(e) => {
