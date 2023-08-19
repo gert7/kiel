@@ -30,7 +30,9 @@ then
   echo "Units installed. Execute 'sudo systemctl start kiel.target' to start services."
 else
   echo "Units installed."
+  systemctl enable kiel.target
   systemctl start kiel.target
+  systemctl enable homeguarantee.service
   systemctl start homeguarantee.service
 fi
 
