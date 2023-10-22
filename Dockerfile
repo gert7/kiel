@@ -1,4 +1,4 @@
-FROM --platform=linux/arm/v7 rust
+FROM --platform=linux/arm/v7 rust:bullseye
 
 RUN mkdir /opt/kiel
 
@@ -7,6 +7,8 @@ COPY Cargo.toml Cargo.lock /opt/kiel
 COPY src/ /opt/kiel/src
 
 COPY server/ /opt/kiel/server
+
+# COPY .cargo /opt/kiel/.cargo
 
 WORKDIR /opt/kiel
 
