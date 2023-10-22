@@ -20,7 +20,7 @@ systemctl daemon-reload
 
 cp target/release/server /usr/local/bin/kielserver
 cp target/release/kiel /usr/local/bin/kiel
-cp phue/boiler.py
+# cp phue/boiler.py
 
 mkdir -p /etc/kiel.d
 cp default.toml /etc/kiel.d/default.toml
