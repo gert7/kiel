@@ -1,8 +1,8 @@
 [Unit]
 Description=Kiel units
 Requires=kieltimer.timer
-Requires=kielserver.timer
-# Requires=kielfetch.service
+Requires=kielserver.service
+# Requires=kielfetch.timer
 
 [Install]
 WantedBy=multi-user.target
