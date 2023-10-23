@@ -1,5 +1,19 @@
 #!/bin/sh
 
+if [ "$1" = "" ]; then
+  echo
+  echo "Usage: ./install_units.sh START [--nofetch]"
+  echo
+  echo "Specify the options for installing units:"
+  echo
+  echo "    START - 0   Install units without starting them"
+  echo "            1   Install units and start"
+  echo ""
+  echo "    --nofetch   Configure kiel not to fetch pricing data"
+  echo "                from Nord Pool."
+  exit
+fi
+
 export USYSDIR=/usr/lib/systemd/system/
 
 systemctl stop kiel.target
@@ -37,9 +51,12 @@ else
   systemctl start homeguarantee.service
 fi
 
-if [ "$2" = "nofetch" ]
+if [ "$2" = "--nofetch" ]
 then
   systemctl stop kielfetch.timer
   systemctl stop kielfetch.service
+else
+  systemctl start kielfetch.timer
+  systemctl start kielfetch.service
 fi
 
