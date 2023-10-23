@@ -22,8 +22,6 @@ systemctl stop kieltimer.timer
 systemctl stop kieltimer.service
 systemctl stop kielfetch.timer
 systemctl stop kielfetch.service
-systemctl stop homeguarantee.timer
-systemctl stop homeguarantee.service
 
 cd "$HOME" || exit
 mkdir -p $USYSDIR
@@ -47,16 +45,13 @@ else
   echo "Units installed."
   systemctl enable kiel.target
   systemctl start kiel.target
-  systemctl enable homeguarantee.service
-  systemctl start homeguarantee.service
 fi
 
 if [ "$2" = "--nofetch" ]
 then
   systemctl stop kielfetch.timer
-  systemctl stop kielfetch.service
+  systemctl disable kielfetch.timer
 else
   systemctl start kielfetch.timer
-  systemctl start kielfetch.service
 fi
 

@@ -11,3 +11,4 @@ nostart:
 onlystart:
 	sudo ./install_units.sh 1
 	sudo docker container start homeassistant
+

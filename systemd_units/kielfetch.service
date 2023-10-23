@@ -1,10 +1,9 @@
 [Unit]
 Description=Fetches Kiel data
-Requires=kielfetch.timer
 
 [Service]
 ExecStart=/usr/local/bin/kiel fetch --enact
 
 [Install]
-WantedBy=kiel.target
+WantedBy=multi-user.target
 

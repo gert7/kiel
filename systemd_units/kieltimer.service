@@ -1,6 +1,5 @@
 [Unit]
 Description=Runs something
-Requires=kieltimer.timer
 
 [Service]
 Environment="RUST_BACKTRACE=1"
