@@ -22,7 +22,7 @@ class MyServer(BaseHTTPRequestHandler):
             print("Kiel service request received!")
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(bytes(f"Kiel says hello, {echo}", "utf-8"))
+            self.wfile.write(bytes(f"Kiel says hello, {echo}!", "utf-8"))
         elif self.path.startswith("/hour"):
             print("Hour executed")
             execute_hour()
