@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc, Weekday};
-use color_eyre::eyre::{self, eyre};
+use eyre::eyre;
 use diesel::{prelude::*, update, PgConnection};
 use serde::Deserialize;
 

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use chrono::{TimeZone, Datelike, Utc};
-    use color_eyre::eyre;
+    use eyre::eyre;
     use diesel::{prelude::*, PgConnection};
     use rand::thread_rng;
     use serial_test::serial;
@@ -34,7 +34,7 @@ mod tests {
         let connection = establish_connection();
         clear_all_tables(&connection).unwrap();
         let start_date = MARKET_TZ.with_ymd_and_hms(2022, 3, 13, 0, 0, 0).unwrap(); // Sunday
-        let sample_day = sample_data::sample_day(&start_date, 0, 24, &mut thread_rng()).unwrap();
+        let sample_day = sample_data::tests::sample_day(&start_date, 0, 24, &mut thread_rng()).unwrap();
         PriceCell::insert_cells_into_database(&connection, &sample_day.0).unwrap();
 
         insert_good_cfg(&connection);
@@ -96,13 +96,12 @@ mod tests {
         println!("{:?}", strategy_result);
     }
 
-    #[tokio::test]
     #[serial]
-    async fn integrate_tomorrow() {
+    fn integrate_tomorrow() {
         let connection = establish_connection();
         clear_all_tables(&connection).unwrap();
         let start_date = MARKET_TZ.with_ymd_and_hms(2022, 3, 13, 0, 0, 0).unwrap(); // Sunday
-        let sample_day = sample_data::sample_day(&start_date, 0, 24, &mut thread_rng()).unwrap();
+        let sample_day = sample_data::tests::sample_day(&start_date, 0, 24, &mut thread_rng()).unwrap();
         PriceCell::insert_cells_into_database(&connection, &sample_day.0).unwrap();
         let now = Utc::now().with_timezone(&PLANNING_TZ);
         planner_main(true, now).unwrap();

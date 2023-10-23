@@ -1,6 +1,5 @@
 use chrono::{Date, DateTime, Duration};
 use chrono_tz::Tz;
-use color_eyre::eyre;
 use diesel::PgConnection;
 use rust_decimal::Decimal;
 
@@ -105,7 +104,7 @@ mod tests {
     use chrono::TimeZone;
     use rand::thread_rng;
 
-    use crate::{constants::MARKET_TZ, sample_data::sample_day};
+    use crate::{constants::MARKET_TZ, sample_data::tests::sample_day};
 
     use super::*;
 

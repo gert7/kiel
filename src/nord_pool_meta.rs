@@ -2,8 +2,7 @@ use std::{num::ParseIntError, str::FromStr};
 
 use chrono::{Date, DateTime, TimeZone};
 use chrono_tz::Tz;
-use color_eyre::eyre;
-use color_eyre::eyre::eyre;
+use eyre::eyre;
 use rust_decimal::Decimal;
 
 

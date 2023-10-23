@@ -2,7 +2,7 @@
 Description=Kiel server Daemon
 
 [Service]
-ExecStart=/usr/local/bin/kielserver
+ExecStart=python /usr/local/bin/kielserver.py
 
 [Install]
 WantedBy=kiel.target

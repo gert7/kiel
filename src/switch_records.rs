@@ -1,5 +1,4 @@
 use crate::schema::switch_records;
-use color_eyre::eyre;
 use diesel::prelude::*;
 use diesel::PgConnection;
 

@@ -9,11 +9,9 @@ use crate::{
     price_matrix::DaySlice,
     schema::price_cells,
 };
-use chrono::{Date, DateTime, NaiveDate, TimeZone, Timelike, Utc};
+use chrono::{Date, DateTime, TimeZone, Utc};
 use chrono_tz::Tz;
-use color_eyre::eyre;
 use diesel::{prelude::*, PgConnection};
-use eyre::eyre;
 use eyre::Result;
 use now::DateTimeNow;
 use rust_decimal::Decimal;

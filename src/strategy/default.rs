@@ -41,7 +41,7 @@ mod tests {
     use now::DateTimeNow;
     use rand::thread_rng;
 
-    use crate::sample_data::sample_day;
+    use crate::sample_data::tests::sample_day;
 
     use super::*;
 

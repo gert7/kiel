@@ -1,7 +1,6 @@
 use chrono::{Date, DateTime, Timelike};
 use chrono_tz::Tz;
-use color_eyre::{eyre, Result};
-use eyre::eyre;
+use eyre::{eyre, Result};
 use now::DateTimeNow;
 
 use crate::{constants::HOURS_OF_DAY, price_cell::PriceCell, price_matrix::DaySlice};
@@ -105,7 +104,7 @@ mod tests {
 
     use crate::{
         constants::{MARKET_TZ, PLANNING_TZ},
-        sample_data::sample_day,
+        sample_data::tests::sample_day,
         strategy::{default::TariffStrategy, PowerState},
     };
 

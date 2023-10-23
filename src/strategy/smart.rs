@@ -133,7 +133,7 @@ mod test {
     use rust_decimal_macros::dec;
 
     use crate::{
-        sample_data::sample_day_specified,
+        sample_data::tests::sample_day_specified,
         strategy::{default::TariffStrategy, HourStrategy},
     };
 

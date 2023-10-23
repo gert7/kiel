@@ -1,5 +1,4 @@
-use color_eyre::eyre;
-use color_eyre::eyre::eyre;
+use eyre::eyre;
 use json::JsonValue;
 use std::{collections::BTreeMap, env};
 
@@ -64,8 +63,10 @@ pub fn decode_json(body: &str) -> eyre::Result<PriceMatrix> {
     Ok(map_to_vec)
 }
 
-pub async fn fetch_json_from_nord_pool() -> eyre::Result<PriceMatrix> {
-    let body = reqwest::get(env::var("JSON_URI")?).await?.text().await?;
+pub fn fetch_json_from_nord_pool() -> eyre::Result<PriceMatrix> {
+    // let body = reqwest::get(env::var("JSON_URI")?).await?.text().await?;
+    let uri = env::var("JSON_URI")?;
+    let body = ureq::get(&uri).call()?.into_string()?;
     // let mut requestjson = File::create("out.json")?;
     // requestjson.write_all(&body.as_bytes())?;
 

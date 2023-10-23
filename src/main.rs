@@ -7,7 +7,6 @@ mod constants;
 mod convars;
 mod database;
 mod holidays;
-mod integration_test;
 // mod nord_pool_spot;
 mod nord_pool_meta;
 mod nord_pool_spot_json;
@@ -25,11 +24,10 @@ use std::{io::Write, ops::Add, process::exit};
 
 use chrono::{DateTime, Datelike, Timelike, Utc};
 use chrono_tz::Tz;
-use color_eyre::eyre;
+use eyre::eyre;
 use config_file::ConfigFile;
 use constants::{DEFAULT_CONFIG_FILENAME, LOCAL_TZ, PLANNING_TZ};
 
-use eyre::eyre;
 use price_cell::get_hour_start_end;
 use proc_mutex::wait_for_file;
 use strategy::{power_state_model::PowerStateDB, PowerState, PriceChangeUnit};
@@ -39,10 +37,10 @@ use crate::{
     strategy::default::TariffStrategy,
 };
 
-async fn fetch_main() -> eyre::Result<()> {
+fn fetch_main() -> eyre::Result<()> {
     let connection = database::establish_connection();
 
-    let date_matrix = nord_pool_spot_json::fetch_json_from_nord_pool().await?;
+    let date_matrix = nord_pool_spot_json::fetch_json_from_nord_pool()?;
     price_matrix::insert_matrix_to_database(&connection, &date_matrix)?;
 
     Ok(())
@@ -115,21 +113,22 @@ fn planner_main<'a>(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Resu
     Ok(())
 }
 
-async fn enact_now(now: DateTime<Tz>) -> eyre::Result<()> {
+fn enact_now(now: DateTime<Tz>) -> eyre::Result<()> {
     let connection = database::establish_connection();
     let (conf_id, _) =
         ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
     let cached_states = PowerStateDB::get_day_from_database(&connection, &now, Some(conf_id))?;
     let exact_known_state = get_power_state_exact(&now, &cached_states)?;
-    apply_power_state(&connection, &exact_known_state).await?;
+    apply_power_state(&connection, &exact_known_state)?;
     Ok(())
 }
 
-#[tokio::main]
+// #[tokio::main]
 // #[doc(hidden)]
-async fn main() -> color_eyre::Result<()> {
-    dotenv::from_path("/etc/kiel.d/.env")?;
-    color_eyre::install()?;
+fn main() -> eyre::Result<()> {
+    dotenv::from_path("/etc/kiel.d/.env")
+    .map_err(|e| eyre!(format!("Unable to open /etc/kiel.d/.env: {e}")))?;
+    // eyre::install()?;
 
     println!("[LF] getting");
     let mut lockfile = wait_for_file();
@@ -161,7 +160,7 @@ async fn main() -> color_eyre::Result<()> {
     let mut force_recalculate = false;
 
     if second == "fetch" {
-        fetch_main().await?;
+        fetch_main()?;
         force_recalculate = true;
     } else if second == "hour" {
         // Does nothing special in the condition itself.
@@ -191,7 +190,7 @@ async fn main() -> color_eyre::Result<()> {
     let enact = std::env::args().find(|v| v == "--enact").is_some();
 
     if enact {
-        enact_now(now).await?;
+        enact_now(now)?;
     } else {
         println!("\nDry run complete. Specify --enact to toggle power.");
     }

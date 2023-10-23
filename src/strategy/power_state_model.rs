@@ -1,8 +1,7 @@
 use crate::schema::power_states;
 use crate::{constants::PLANNING_TZ, price_cell::get_day_start_end};
-use chrono::{Date, DateTime, Utc, NaiveDate};
+use chrono::{Date, DateTime, Utc};
 use chrono_tz::Tz;
-use color_eyre::eyre;
 use diesel::{prelude::*, PgConnection};
 
 use super::{PowerState, PriceChangeUnit};

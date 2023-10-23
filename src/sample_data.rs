@@ -1,61 +1,75 @@
-use chrono::{Duration, TimeZone, DateTime, Timelike};
-use chrono_tz::{Tz, Europe::Berlin};
-use color_eyre::Result;
-use now::DateTimeNow;
-use rand::Rng;
-use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
-use color_eyre::eyre::eyre;
-
-use crate::{price_matrix::{DaySlice, PricePerMwh}, price_cell::PriceCell, constants::PLANNING_TZ};
-
-fn random_price<R>(rng: &mut R) -> Decimal
-where
-    R: Rng + ?Sized,
-{
-    let base = (rng.gen::<u32>() % 19000) + 100; // ensure at least €1
-    Decimal::new(base.into(), 2)
-}
-
-pub fn sample_day<R>(start_date: &DateTime<Tz>, start_hour: u32, num_hours: u32, rng: &mut R) -> Result<DaySlice>
-where
-    R: Rng + ?Sized,
-{
-    let mut vec = vec![];
-    let start_dt = start_date.with_hour(start_hour).ok_or(eyre!("Unable to set start_hour"))?;
-    let start_dt = start_dt.beginning_of_hour();
-    for h in 0..num_hours {
-        let hour = PriceCell {
-            price: PricePerMwh(random_price(rng)),
-            moment: start_dt + Duration::hours(h.into()),
-            tariff_price: None,
-
-            market_hour: (h + start_hour) % 24,
-        };
-        vec.push(hour);
-    }
-    Ok(DaySlice(vec))
-}
-
-/// Produces sample day based on static array of decimals.
-/// Tariff will be None
-pub fn sample_day_specified(prices: &'static [Decimal], start_hour: u32) -> DaySlice {
-    let mut vec = vec![];
-    let start_dt = Berlin.ymd(2022, 3, 21).and_hms(start_hour, 0, 0);
-    for (i, price) in prices.iter().enumerate() {
-        let offset: u32 = i.try_into().unwrap();
-        let moment = start_dt + Duration::hours(offset.into());
-        vec.push(PriceCell { price: PricePerMwh(*price), moment, tariff_price: None, market_hour: start_hour + offset });
-    }
-    DaySlice(vec)
-}
+use rust_decimal::Decimal;
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use rand::{prelude::StdRng, SeedableRng};
 
-    use super::*;
+    use chrono::{DateTime, Duration, TimeZone, Timelike};
+    use chrono_tz::{Europe::Berlin, Tz};
+    use eyre::Result;
+    use now::DateTimeNow;
+    // use rand::Rng;
+    use eyre::eyre;
 
+    use super::*;
+    use crate::{
+        price_cell::PriceCell,
+        price_matrix::{DaySlice, PricePerMwh},
+    };
+
+    fn random_price<R>(rng: &mut R) -> Decimal
+    where
+        R: rand::Rng + ?Sized,
+    {
+        let base = (rng.gen::<u32>() % 19000) + 100; // ensure at least €1
+        Decimal::new(base.into(), 2)
+    }
+
+    pub fn sample_day<R>(
+        start_date: &DateTime<Tz>,
+        start_hour: u32,
+        num_hours: u32,
+        rng: &mut R,
+    ) -> Result<DaySlice>
+    where
+        R: rand::Rng + ?Sized,
+    {
+        let mut vec = vec![];
+        let start_dt = start_date
+            .with_hour(start_hour)
+            .ok_or(eyre!("Unable to set start_hour"))?;
+        let start_dt = start_dt.beginning_of_hour();
+        for h in 0..num_hours {
+            let hour = PriceCell {
+                price: PricePerMwh(random_price(rng)),
+                moment: start_dt + Duration::hours(h.into()),
+                tariff_price: None,
+
+                market_hour: (h + start_hour) % 24,
+            };
+            vec.push(hour);
+        }
+        Ok(DaySlice(vec))
+    }
+
+    /// Produces sample day based on static array of decimals.
+    /// Tariff will be None
+    pub fn sample_day_specified(prices: &'static [Decimal], start_hour: u32) -> DaySlice {
+        let mut vec = vec![];
+        let start_dt = Berlin.ymd(2022, 3, 21).and_hms(start_hour, 0, 0);
+        for (i, price) in prices.iter().enumerate() {
+            let offset: u32 = i.try_into().unwrap();
+            let moment = start_dt + Duration::hours(offset.into());
+            vec.push(PriceCell {
+                price: PricePerMwh(*price),
+                moment,
+                tariff_price: None,
+                market_hour: start_hour + offset,
+            });
+        }
+        DaySlice(vec)
+    }
     #[test]
     fn random_price_in_range() {
         let mut rng = StdRng::seed_from_u64(711);

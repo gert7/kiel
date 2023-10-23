@@ -30,7 +30,8 @@ cp systemd_units/* $USYSDIR
 
 systemctl daemon-reload
 
-cp target/release/server /usr/local/bin/kielserver
+# cp target/release/server /usr/local/bin/kielserver
+cp server/server.py /usr/local/bin/server.py
 cp target/release/kiel /usr/local/bin/kiel
 # cp phue/boiler.py
 
