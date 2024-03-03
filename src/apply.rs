@@ -18,9 +18,10 @@ pub fn apply_power_state(connection: &PgConnection, state: &PowerState) -> eyre:
             PowerState::Off => "off",
         };
         Command::new("python3")
-        .arg("/usr/local/bin/kieldirect")
-        .arg(state)
-        .output().expect("Failed to execute direct command!");
+            .arg("/usr/local/bin/kieldirect")
+            .arg(state)
+            .output()
+            .expect("Failed to execute direct command!");
     }
     record_switch(connection, state)?;
     match state {

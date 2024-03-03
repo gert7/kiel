@@ -2,6 +2,7 @@
 Description=Fetches Kiel data
 
 [Service]
+Type=oneshot
 ExecStart=/usr/local/bin/kiel fetch --enact
 
 [Install]

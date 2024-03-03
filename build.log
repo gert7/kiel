@@ -1,0 +1,87 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 390B done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/navikey/raspbian-bullseye:latest
+#3 DONE 0.6s
+
+#4 [ 1/11] FROM docker.io/navikey/raspbian-bullseye@sha256:f9ed84dec1af512e1d984008ad306629df8e4527cee7d8305d88bea75851df47
+#4 CACHED
+
+#5 [internal] load build context
+#5 transferring context: 1.33kB done
+#5 DONE 0.0s
+
+#6 [ 2/11] RUN mkdir /opt/kiel
+#6 DONE 0.4s
+
+#7 [ 3/11] COPY Cargo.toml Cargo.lock /opt/kiel
+#7 DONE 0.1s
+
+#8 [ 4/11] COPY src/ /opt/kiel/src
+#8 DONE 0.1s
+
+#9 [ 5/11] COPY server/ /opt/kiel/server
+#9 DONE 0.1s
+
+#10 [ 6/11] COPY rustup-init /opt
+#10 DONE 0.1s
+
+#11 [ 7/11] RUN /opt/rustup-init -y
+#11 0.374 info: profile set to 'default'
+#11 0.375 info: default host triple is armv7-unknown-linux-gnueabihf
+#11 0.377 info: syncing channel updates for 'stable-armv7-unknown-linux-gnueabihf'
+#11 1.107 info: latest update on 2023-10-05, rust version 1.73.0 (cc66ad468 2023-10-03)
+#11 1.110 info: downloading component 'cargo'
+#11 1.845 info: downloading component 'clippy'
+#11 2.104 info: downloading component 'rust-docs'
+#11 3.460 info: downloading component 'rust-std'
+#11 5.733 info: downloading component 'rustc'
+#11 13.23 info: downloading component 'rustfmt'
+#11 13.48 info: installing component 'cargo'
+#11 15.32 info: installing component 'clippy'
+#11 16.03 info: installing component 'rust-docs'
+#11 22.83 info: installing component 'rust-std'
+#11 28.67 info: installing component 'rustc'
+#11 46.00 info: installing component 'rustfmt'
+#11 46.78 info: default toolchain set to 'stable-armv7-unknown-linux-gnueabihf'
+#11 46.78 
+#11 46.96   stable-armv7-unknown-linux-gnueabihf installed - rustc 1.73.0 (cc66ad468 2023-10-03)
+#11 46.96 
+#11 46.97 
+#11 46.97 Rust is installed now. Great!
+#11 46.97 
+#11 46.97 To get started you may need to restart your current shell.
+#11 46.97 This would reload your PATH environment variable to include
+#11 46.97 Cargo's bin directory ($HOME/.cargo/bin).
+#11 46.97 
+#11 46.97 To configure your current shell, run:
+#11 46.97 source "$HOME/.cargo/env"
+#11 DONE 47.3s
+
+#12 [ 8/11] WORKDIR /opt/kiel
+#12 DONE 0.1s
+
+#13 [ 9/11] RUN source /root/.cargo/env && cargo fetch
+#13 0.290 /bin/sh: 1: source: not found
+#13 ERROR: process "/bin/sh -c source /root/.cargo/env && cargo fetch" did not complete successfully: exit code: 127
+------
+ > [ 9/11] RUN source /root/.cargo/env && cargo fetch:
+0.290 /bin/sh: 1: source: not found
+------
+Dockerfile:17
+--------------------
+  15 |     WORKDIR /opt/kiel
+  16 |     
+  17 | >>> RUN source /root/.cargo/env && cargo fetch
+  18 |     
+  19 |     RUN source /root/.cargo/env && cargo build --release
+--------------------
+ERROR: failed to solve: process "/bin/sh -c source /root/.cargo/env && cargo fetch" did not complete successfully: exit code: 127
+mv: cannot stat 'targetcontainer/opt/kiel/target/release': No such file or directory

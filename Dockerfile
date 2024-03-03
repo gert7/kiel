@@ -1,4 +1,4 @@
-FROM --platform=linux/arm/v7 rust:bullseye
+FROM --platform=linux/arm/v7 navikey/raspbian-bullseye
 
 RUN mkdir /opt/kiel
 
@@ -8,13 +8,19 @@ COPY src/ /opt/kiel/src
 
 COPY server/ /opt/kiel/server
 
-# COPY .cargo /opt/kiel/.cargo
+COPY rustup-init /opt
+
+RUN /opt/rustup-init -y
 
 WORKDIR /opt/kiel
 
-RUN cargo fetch
+RUN cp -r /usr/local/cargo ~/.cargo
 
-RUN cargo build --release
+# RUN chmod +x /usr/local/cargo/env
+
+RUN . ~/.cargo/env && cargo fetch
+
+RUN . ~/.cargo/env && cargo build --release
 
 RUN echo done
 
