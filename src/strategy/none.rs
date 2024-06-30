@@ -6,7 +6,7 @@ use super::{MaskablePowerStrategy, PriceChangeUnit};
 pub struct NoneStrategy;
 
 impl MaskablePowerStrategy for NoneStrategy {
-    fn plan_day_masked<'a>(&self, changes: &'a Vec<PriceChangeUnit>) -> Vec<PriceChangeUnit<'a>> {
-        return changes.clone();
+    fn plan_day_masked<'a>(&self, changes: &'a [PriceChangeUnit]) -> Vec<PriceChangeUnit<'a>> {
+        changes.to_vec()
     }
 }

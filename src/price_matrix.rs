@@ -88,12 +88,11 @@ pub fn insert_matrix_to_database(
 ) -> eyre::Result<()> {
     let date_matrix = date_matrix
         .iter()
-        .filter(|o| o.is_some())
-        .map(|o| o.as_ref().unwrap());
+        .filter_map(|o| o.as_ref());
 
     for date in date_matrix {
         for price in &date.cells.0 {
-            price.insert_cell_into_database(&connection)?;
+            price.insert_cell_into_database(connection)?;
         }
     }
     Ok(())

@@ -9,7 +9,7 @@ pub struct PriceLimitStrategy {
 }
 
 impl MaskablePowerStrategy for PriceLimitStrategy {
-    fn plan_day_masked<'a>(&self, mask: &'a Vec<PriceChangeUnit>) -> Vec<PriceChangeUnit<'a>> {
+    fn plan_day_masked<'a>(&self, mask: &'a [PriceChangeUnit]) -> Vec<PriceChangeUnit<'a>> {
         // println!("Running PriceLimitStrategy");
         mask.iter()
             .map(|pcu| match pcu.price {

@@ -21,17 +21,17 @@ fn is_morning_hour(moment: &DateTime<Tz>) -> bool {
 }
 
 fn hours_with_prices<'a>(
-    changes: &'a Vec<PriceChangeUnit>,
+    changes: &'a [PriceChangeUnit],
 ) -> impl Iterator<Item = &'a PriceChangeUnit<'a>> {
     changes.iter().filter(|a| a.price.is_some())
 }
 
-fn prices_only<'a>(changes: &'a Vec<PriceChangeUnit>) -> impl Iterator<Item = &'a PriceCell> {
+fn prices_only<'a>(changes: &'a [PriceChangeUnit]) -> impl Iterator<Item = &'a PriceCell> {
     changes.iter().filter_map(|pcu| pcu.price)
 }
 
-fn average_price(changes: &Vec<PriceChangeUnit>) -> Decimal {
-    let prices = prices_only(&changes);
+fn average_price(changes: &[PriceChangeUnit]) -> Decimal {
+    let prices = prices_only(changes);
     let average = prices.fold((0, dec!(0)), |tu, price| (tu.0 + 1, tu.1 + price.total().0));
     average.1 / Decimal::from(average.0)
 }
@@ -43,28 +43,28 @@ fn price_or_default(price_option: &Option<&PriceCell>, default: Decimal) -> Deci
     }
 }
 
-fn sort_by_price(vec: &mut Vec<PriceChangeUnit>, default: Decimal) {
+fn sort_by_price(vec: &mut [PriceChangeUnit], default: Decimal) {
     vec.sort_by(|a, b| {
         price_or_default(&a.price, default).cmp(&price_or_default(&b.price, default))
     });
 }
 
-fn sort_by_price_refs(vec: &mut Vec<&PriceChangeUnit>, default: Decimal) {
+fn sort_by_price_refs(vec: &mut [&PriceChangeUnit], default: Decimal) {
     vec.sort_by(|a, b| {
         price_or_default(&a.price, default).cmp(&price_or_default(&b.price, default))
     });
 }
 
 impl MaskablePowerStrategy for SmartStrategy {
-    fn plan_day_masked<'a>(&self, changes: &'a Vec<PriceChangeUnit>) -> Vec<PriceChangeUnit<'a>> {
+    fn plan_day_masked<'a>(&self, changes: &'a [PriceChangeUnit]) -> Vec<PriceChangeUnit<'a>> {
         let morning_hour_count = self.morning_hours.clamp(0, 7);
-        let count_of_hours_with_prices = hours_with_prices(&changes).count();
+        let count_of_hours_with_prices = hours_with_prices(changes).count();
         if count_of_hours_with_prices < 20 {
-            return changes.clone();
+            return changes.to_vec();
         }
 
-        let ap = average_price(&changes);
-        let mut sorted_by_price = changes.clone();
+        let ap = average_price(changes);
+        let mut sorted_by_price = changes.to_vec();
         sort_by_price(&mut sorted_by_price, ap);
 
         let mut result = vec![];
@@ -108,7 +108,7 @@ impl MaskablePowerStrategy for SmartStrategy {
             }
         }
 
-        while let Some(pcu) = remainder.next() {
+        for pcu in remainder {
             result.push(pcu.clone_with_power_state(PowerState::Off));
         }
 

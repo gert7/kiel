@@ -7,7 +7,7 @@ use rust_decimal::Decimal;
 
 
 pub fn convert_price_to_decimal(string: &str) -> eyre::Result<Decimal> {
-    let string = string.replace(",", ".");
+    let string = string.replace(',', ".");
     Ok(Decimal::from_str(&string)?)
 }
 
@@ -18,7 +18,7 @@ pub fn convert_hour_to_u32(string: &str) -> Result<u32, ParseIntError> {
     string2.truncate(2);
 
     println!("{string}");
-    Ok(string2.parse::<u32>()?)
+    string2.parse::<u32>()
 }
 
 fn parse_date_dmy(date: &str, timezone: &Tz) -> Result<Date<Tz>, ParseIntError> {
@@ -39,12 +39,12 @@ fn parse_date_ymd(date: &str, timezone: &Tz) -> Result<Date<Tz>, ParseIntError> 
 
 pub fn parse_date(date: &str, timezone: &Tz) -> eyre::Result<Date<Tz>> {
     let dmy = parse_date_dmy(date, timezone);
-    if dmy.is_ok() {
-        return Ok(dmy.unwrap());
+    if let Ok(dmy) = dmy {
+        return Ok(dmy);
     }
     let ymd = parse_date_ymd(date, timezone);
-    if ymd.is_ok() {
-        return Ok(ymd.unwrap());
+    if let Ok(ymd) = ymd {
+        return Ok(ymd);
     }
     Err(eyre!("Unable to parse dateline: {}", date))
 }

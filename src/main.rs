@@ -24,9 +24,9 @@ use std::{io::Write, ops::Add, process::exit};
 
 use chrono::{DateTime, Datelike, Timelike, Utc};
 use chrono_tz::Tz;
-use eyre::eyre;
 use config_file::ConfigFile;
 use constants::{DEFAULT_CONFIG_FILENAME, LOCAL_TZ, PLANNING_TZ};
+use eyre::eyre;
 
 use price_cell::get_hour_start_end;
 use proc_mutex::wait_for_file;
@@ -52,7 +52,10 @@ fn get_power_state_exact(
 ) -> eyre::Result<PowerState> {
     let range = get_hour_start_end(datetime)?;
     for pcu in states {
-        let moment = pcu.moment.with_minute(1).ok_or(eyre!("Unable to set 1 minute"))?;
+        let moment = pcu
+            .moment
+            .with_minute(1)
+            .ok_or(eyre!("Unable to set 1 minute"))?;
         // println!("trying on {}", moment);
         if range.contains(&moment) {
             println!("Range found: {}: {:?}", moment, range);
@@ -64,7 +67,7 @@ fn get_power_state_exact(
     Err(eyre!("Range not found"))
 }
 
-fn planner_main<'a>(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Result<()> {
+fn planner_main(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Result<()> {
     let connection = database::establish_connection();
     let (conf_id, config) =
         ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
@@ -127,7 +130,7 @@ fn enact_now(now: DateTime<Tz>) -> eyre::Result<()> {
 // #[doc(hidden)]
 fn main() -> eyre::Result<()> {
     dotenv::from_path("/etc/kiel.d/.env")
-    .map_err(|e| eyre!(format!("Unable to open /etc/kiel.d/.env: {e}")))?;
+        .map_err(|e| eyre!(format!("Unable to open /etc/kiel.d/.env: {e}")))?;
     // eyre::install()?;
 
     println!("[LF] getting");
@@ -143,8 +146,7 @@ fn main() -> eyre::Result<()> {
             eprintln!("  fetch");
             eprintln!("  hour");
             eprintln!("  hour-force");
-            eprintln!("  reinsert-config [FILENAME]");
-            eprintln!("");
+            eprintln!("  reinsert-config [FILENAME]\n");
             exit(1)
         }
     };
@@ -187,7 +189,7 @@ fn main() -> eyre::Result<()> {
     planner_main(force_recalculate, now)?;
     planner_main(force_recalculate, tomorrow)?;
 
-    let enact = std::env::args().find(|v| v == "--enact").is_some();
+    let enact = std::env::args().any(|v| &v == "--enact");
 
     if enact {
         enact_now(now)?;
@@ -195,7 +197,7 @@ fn main() -> eyre::Result<()> {
         println!("\nDry run complete. Specify --enact to toggle power.");
     }
 
-    lockfile.write(b"rub a dub dub thanks for the grub")?;
+    lockfile.write_all(b"rub a dub dub thanks for the grub")?;
 
     Ok(())
 }

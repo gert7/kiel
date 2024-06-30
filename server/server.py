@@ -1,5 +1,4 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import string
 import subprocess
 
 hostname = "0.0.0.0"

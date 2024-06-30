@@ -46,7 +46,7 @@ fn get_overrides_from_config(config: &ConfigFile) -> Vec<Oride> {
 }
 
 pub fn apply_overrides(
-    vec: &mut Vec<PriceChangeUnit>,
+    vec: &mut [PriceChangeUnit],
     config: &ConfigFile,
     timezone: &Tz
 ) {
@@ -60,7 +60,7 @@ pub fn apply_overrides(
             .iter()
             .find(|&oride| oride.day == day && oride.hour == hour);
         if let Some(oride) = oride {
-            (*pcu).state = oride.state;
+            pcu.state = oride.state;
         }
     }
 }

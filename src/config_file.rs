@@ -81,7 +81,7 @@ impl ConfigFile {
 
     pub fn decode_file(filename: &str) -> eyre::Result<ConfigFile> {
         let conf = std::fs::read_to_string(filename)?;
-        Ok(ConfigFile::decode_config(&conf)?)
+        ConfigFile::decode_config(&conf)
     }
 
     pub fn get_day(&self, weekday: &Weekday) -> &Day {
@@ -135,7 +135,7 @@ impl ConfigFile {
             .ok();
     }
 
-    fn config_attempt_loop<'a>(
+    fn config_attempt_loop(
         connection: &PgConnection,
         cfgs: Vec<ConfigFileDB>,
     ) -> eyre::Result<(ConfigFileDB, ConfigFile)> {
@@ -182,7 +182,7 @@ impl ConfigFile {
             .limit(10)
             .load::<ConfigFileDB>(connection)
             .expect("Unable to load configuration file from database");
-        let cfg_pair = ConfigFile::config_attempt_loop(&connection, find)?;
+        let cfg_pair = ConfigFile::config_attempt_loop(connection, find)?;
         Ok(cfg_pair)
     }
 
@@ -213,9 +213,7 @@ impl ConfigFile {
             })
             .returning(id)
             .get_results(connection)?;
-        Ok(*conf_id
-            .get(0)
-            .expect("Unable to insert default configuration into database"))
+        Ok(*conf_id.first().expect("Unable to insert default configuration into database"))
     }
 
     pub fn fetch_with_default_inserting(

@@ -11,7 +11,7 @@ pub enum Tariff {
 
 impl Tariff {
     fn daytime_tariff(hour: u32) -> Tariff {
-        if hour < 7 || hour >= 22 {
+        if !(7..22).contains(&hour) {
             Tariff::Night
         } else {
             Tariff::Day

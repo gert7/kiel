@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub fn decode_json(body: &str) -> eyre::Result<PriceMatrix> {
-    let json = json::parse(&body)?;
+    let json = json::parse(body)?;
 
     let mut date_map: BTreeMap<String, Option<DateColumn>> = BTreeMap::new();
 

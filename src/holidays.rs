@@ -103,13 +103,8 @@ fn is_easter_related_date(date: &Date<Tz>) -> bool {
     }
 }
 
-fn is_moving_national_holiday(date: &Date<Tz>) -> bool {
-    // is_easter_related_date(date)
-    false
-}
-
 pub fn is_national_holiday(date: &Date<Tz>) -> bool {
-    is_fixed_national_holiday(date) || is_moving_national_holiday(date)
+    is_fixed_national_holiday(date)
 }
 
 #[cfg(test)]

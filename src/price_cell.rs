@@ -7,7 +7,7 @@ use crate::{
         NIGHT_TARIFF_PRICE_JANUARY_2023, NIGHT_TARIFF_PRICE_OCTOBER_2022,
     },
     price_matrix::DaySlice,
-    schema::price_cells,
+    schema::price_cells, tariff,
 };
 use chrono::{Date, DateTime, TimeZone, Utc};
 use chrono_tz::Tz;
@@ -133,7 +133,9 @@ impl PriceCell {
 
     pub fn total(&self) -> PricePerMwh {
         let mut price = self.price.0;
-        self.tariff_price.as_ref().map(|tariff| price += tariff.0);
+        if let Some(tariff) = self.tariff_price.as_ref() {
+            price += tariff.0;
+        }
         PricePerMwh(price)
     }
 
@@ -169,7 +171,7 @@ impl PriceCell {
                 market_hour: self.market_hour.try_into().unwrap(),
             };
 
-            let pcdb: PriceCellDB = diesel::insert_into(price_cells)
+            diesel::insert_into(price_cells)
                 .values(&new_price)
                 .get_result::<PriceCellDB>(connection)?;
         }
@@ -204,7 +206,7 @@ pub struct PriceCellDB {
 
 impl From<PriceCellDB> for PriceCell {
     fn from(pcdb: PriceCellDB) -> Self {
-        let tariff_price = pcdb.tariff.map(|d| PricePerMwh(d));
+        let tariff_price = pcdb.tariff.map(PricePerMwh);
         PriceCell {
             price: PricePerMwh(pcdb.price),
             moment: pcdb.moment_utc.with_timezone(&MARKET_TZ),

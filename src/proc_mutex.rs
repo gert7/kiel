@@ -23,7 +23,7 @@ pub fn wait_for_file() -> File {
     let mut lockfile = File::create(&lockfile_full_name).unwrap();
     let timestamp = Utc::now().timestamp();
     let pid_text = format!("{}:{}\n", std::process::id(), timestamp);
-    lockfile.write(pid_text.as_bytes()).expect("Unable to write to lockfile!");
+    lockfile.write_all(pid_text.as_bytes()).expect("Unable to write to lockfile!");
     lockfile.flush().ok();
 
     lock.map(|_| lockfile).unwrap()

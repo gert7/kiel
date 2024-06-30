@@ -1,4 +1,4 @@
-use chrono::{Date, DateTime, Timelike};
+use chrono::{DateTime, Timelike};
 use chrono_tz::Tz;
 use eyre::{eyre, Result};
 use now::DateTimeNow;
@@ -74,7 +74,7 @@ pub trait HourStrategy {
             let existing = vec
                 .iter()
                 .find(|pcu| pcu.moment.with_timezone(&date.timezone()).hour() == hour);
-            if let None = existing {
+            if existing.is_none() {
                 let moment = date.with_hour(hour).ok_or(eyre!("Unable to set hour."))?;
                 let moment = moment.beginning_of_hour();
                 let pcu = PriceChangeUnit {
@@ -93,7 +93,7 @@ pub trait HourStrategy {
 /// A power switching strategy that accepts a set of
 /// already-set price changes.
 pub trait MaskablePowerStrategy {
-    fn plan_day_masked<'a>(&self, changes: &'a Vec<PriceChangeUnit>) -> Vec<PriceChangeUnit<'a>>;
+    fn plan_day_masked<'a>(&self, changes: &'a [PriceChangeUnit]) -> Vec<PriceChangeUnit<'a>>;
 }
 
 #[cfg(test)]

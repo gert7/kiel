@@ -19,7 +19,7 @@ impl TariffStrategy {
 
 impl HourStrategy for TariffStrategy {
     fn plan_hour(&self, datetime: &DateTime<Tz>) -> PowerState {
-        let tariff = Tariff::get_tariff(&datetime);
+        let tariff = Tariff::get_tariff(datetime);
         TariffStrategy::tariff_to_power_state(tariff)
     }
     fn plan_day<'a>(&self, day_prices: &'a DaySlice) -> Vec<PriceChangeUnit<'a>> {

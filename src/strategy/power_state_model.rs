@@ -33,12 +33,12 @@ impl PowerStateDB {
 
     pub fn insert_day_into_database(
         connection: &PgConnection,
-        pcu_vec: &Vec<PriceChangeUnit>,
+        pcu_vec: &[PriceChangeUnit],
         configuration_id: Option<i32>,
     ) {
         let new_pcus = pcu_vec
             .iter()
-            .map(|pcu| NewPowerStateDB::from_pcu(&pcu, configuration_id))
+            .map(|pcu| NewPowerStateDB::from_pcu(pcu, configuration_id))
             .collect::<Vec<NewPowerStateDB>>();
 
         diesel::insert_into(power_states::table)
@@ -54,7 +54,7 @@ impl PowerStateDB {
     ) -> eyre::Result<Vec<PriceChangeUnit<'a>>> {
         use crate::schema::power_states::dsl::*;
 
-        let (day_start, day_end) = get_day_start_end(&day)?;
+        let (day_start, day_end) = get_day_start_end(day)?;
         println!("Day from database: {:?} {:?}", day_start, day_end);
 
         let result = match configuration_id_val {
