@@ -32,7 +32,7 @@ impl PowerStateDB {
     }
 
     pub fn insert_day_into_database(
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         pcu_vec: &[PriceChangeUnit],
         configuration_id: Option<i32>,
     ) {
@@ -48,7 +48,7 @@ impl PowerStateDB {
     }
 
     pub fn get_day_from_database<'a>(
-        connection: &'a PgConnection,
+        connection: &'a mut PgConnection,
         day: &'a DateTime<Tz>,
         configuration_id_val: Option<i32>,
     ) -> eyre::Result<Vec<PriceChangeUnit<'a>>> {
@@ -116,7 +116,7 @@ mod tests {
         database,
     };
 
-    fn clear_table(connection: &PgConnection) {
+    fn clear_table(connection: &mut PgConnection) {
         diesel::delete(power_states::table).execute(connection).ok();
     }
 
@@ -147,7 +147,7 @@ mod tests {
         vec
     }
 
-    fn insert_checkerboard(connection: &PgConnection, date: &Date<Tz>, cfid: i32) -> i32 {
+    fn insert_checkerboard(connection: &mut PgConnection, date: &Date<Tz>, cfid: i32) -> i32 {
         let samples = day_sample_checkerboard(date, cfid);
         diesel::insert_into(power_states::table)
             .values(&samples)

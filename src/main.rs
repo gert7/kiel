@@ -38,10 +38,10 @@ use crate::{
 };
 
 fn fetch_main() -> eyre::Result<()> {
-    let connection = database::establish_connection();
+    let mut connection = database::establish_connection();
 
     let date_matrix = nord_pool_spot_json::fetch_json_from_nord_pool()?;
-    price_matrix::insert_matrix_to_database(&connection, &date_matrix)?;
+    price_matrix::insert_matrix_to_database(&mut connection, &date_matrix)?;
 
     Ok(())
 }
@@ -68,14 +68,14 @@ fn get_power_state_exact(
 }
 
 fn planner_main(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Result<()> {
-    let connection = database::establish_connection();
+    let mut connection = database::establish_connection();
     let (conf_id, config) =
-        ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
+        ConfigFile::fetch_with_default_inserting(&mut connection, DEFAULT_CONFIG_FILENAME)?;
     println!("conf id {:?}", conf_id);
 
     let date = moment;
 
-    let cached_states = PowerStateDB::get_day_from_database(&connection, &date, Some(conf_id))?;
+    let cached_states = PowerStateDB::get_day_from_database(&mut connection, &date, Some(conf_id))?;
     let exact_known_state = get_power_state_exact(&moment, &cached_states);
     // println!("Current cached state: {:?}", exact_known_state);
 
@@ -94,7 +94,7 @@ fn planner_main(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Result<(
     let config_day = config.get_day(&date.weekday());
     println!("{:?}", config_day);
 
-    let pdb = PriceCell::get_prices_from_db(&connection, &date)?;
+    let pdb = PriceCell::get_prices_from_db(&mut connection, &date)?;
 
     let base = config_day
         .base
@@ -108,7 +108,7 @@ fn planner_main(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Result<(
 
     overrides::apply_overrides(&mut strategy_result, &config, &LOCAL_TZ);
 
-    PowerStateDB::insert_day_into_database(&connection, &strategy_result, Some(conf_id));
+    PowerStateDB::insert_day_into_database(&mut connection, &strategy_result, Some(conf_id));
     for pcu in &strategy_result {
         println!("{:?}", pcu);
     }
@@ -117,12 +117,12 @@ fn planner_main(force_recalculate: bool, moment: DateTime<Tz>) -> eyre::Result<(
 }
 
 fn enact_now(now: DateTime<Tz>) -> eyre::Result<()> {
-    let connection = database::establish_connection();
+    let mut connection = database::establish_connection();
     let (conf_id, _) =
-        ConfigFile::fetch_with_default_inserting(&connection, DEFAULT_CONFIG_FILENAME)?;
-    let cached_states = PowerStateDB::get_day_from_database(&connection, &now, Some(conf_id))?;
+        ConfigFile::fetch_with_default_inserting(&mut connection, DEFAULT_CONFIG_FILENAME)?;
+    let cached_states = PowerStateDB::get_day_from_database(&mut connection, &now, Some(conf_id))?;
     let exact_known_state = get_power_state_exact(&now, &cached_states)?;
-    apply_power_state(&connection, &exact_known_state)?;
+    apply_power_state(&mut connection, &exact_known_state)?;
     Ok(())
 }
 
@@ -176,9 +176,9 @@ fn main() -> eyre::Result<()> {
         let third = std::env::args().nth(2);
         let filename = third.unwrap_or("default.toml".to_owned());
         println!("Reinserting crate-local configuration: {}", filename);
-        let connection = database::establish_connection();
+        let mut connection = database::establish_connection();
         let default_toml = std::fs::read_to_string(filename)?;
-        ConfigFile::insert_string(&connection, &default_toml)?;
+        ConfigFile::insert_string(&mut connection, &default_toml)?;
         force_recalculate = true;
     } else {
         // let a = nord_pool_spot_json::fetch_json_from_nord_pool().await?;

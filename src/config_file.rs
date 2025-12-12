@@ -96,7 +96,7 @@ impl ConfigFile {
         }
     }
 
-    pub fn last_id(connection: &PgConnection) -> Result<i32, diesel::result::Error> {
+    pub fn last_id(connection: &mut PgConnection) -> Result<i32, diesel::result::Error> {
         use crate::schema::day_configurations::dsl::*;
         let row = day_configurations
             .order(id.desc())
@@ -104,7 +104,7 @@ impl ConfigFile {
         Ok(row.id)
     }
 
-    pub fn increment_failures(connection: &PgConnection) {
+    pub fn increment_failures(connection: &mut PgConnection) {
         use crate::schema::convar_ints::dsl::*;
 
         let failure_count = convar_ints
@@ -122,7 +122,7 @@ impl ConfigFile {
             .ok();
     }
 
-    pub fn reset_failures(connection: &PgConnection) {
+    pub fn reset_failures(connection: &mut PgConnection) {
         use crate::schema::convar_ints::dsl::*;
 
         let failures = NewConvarInt {
@@ -136,7 +136,7 @@ impl ConfigFile {
     }
 
     fn config_attempt_loop(
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         cfgs: Vec<ConfigFileDB>,
     ) -> eyre::Result<(ConfigFileDB, ConfigFile)> {
         use crate::schema::day_configurations::dsl::*;
@@ -172,7 +172,7 @@ impl ConfigFile {
     }
 
     pub fn fetch_from_database(
-        connection: &PgConnection,
+        connection: &mut PgConnection,
     ) -> eyre::Result<(ConfigFileDB, ConfigFile)> {
         use crate::schema::day_configurations::dsl::*;
 
@@ -187,7 +187,7 @@ impl ConfigFile {
     }
 
     pub fn fetch_with_default(
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         default_filename: &str,
     ) -> eyre::Result<(Option<ConfigFileDB>, ConfigFile)> {
         let result = ConfigFile::fetch_from_database(connection);
@@ -203,7 +203,7 @@ impl ConfigFile {
         }
     }
 
-    pub fn insert_string(connection: &PgConnection, file_string: &str) -> eyre::Result<i32> {
+    pub fn insert_string(connection: &mut PgConnection, file_string: &str) -> eyre::Result<i32> {
         use crate::schema::day_configurations::dsl::*;
         let conf_id: Vec<i32> = diesel::insert_into(day_configurations)
             .values(NewConfigFileDB {
@@ -217,7 +217,7 @@ impl ConfigFile {
     }
 
     pub fn fetch_with_default_inserting(
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         default_filename: &str,
     ) -> eyre::Result<(i32, ConfigFile)> {
         let result = ConfigFile::fetch_from_database(connection);
@@ -265,11 +265,11 @@ pub mod tests {
     use super::*;
     use crate::schema::day_configurations::dsl::*;
 
-    fn clear_table(connection: &PgConnection) {
+    fn clear_table(connection: &mut PgConnection) {
         diesel::delete(day_configurations).execute(connection).ok();
     }
 
-    pub fn insert_good_cfg(connection: &PgConnection) -> ConfigFileDB {
+    pub fn insert_good_cfg(connection: &mut PgConnection) -> ConfigFileDB {
         let good_toml = std::fs::read_to_string("samples/default.toml").unwrap();
         let new_cfg = NewConfigFileDB {
             toml: &good_toml,
@@ -284,7 +284,7 @@ pub mod tests {
 
     const BAD_TOML: &str = "jwraiojfoad";
 
-    fn insert_bad_cfg(connection: &PgConnection, known_broken_val: bool) -> ConfigFileDB {
+    fn insert_bad_cfg(connection: &mut PgConnection, known_broken_val: bool) -> ConfigFileDB {
         let new_cfg = NewConfigFileDB {
             toml: BAD_TOML,
             known_broken: known_broken_val,
@@ -299,19 +299,19 @@ pub mod tests {
     #[test]
     #[serial]
     fn loads_from_database() {
-        let connection = database::establish_connection();
-        clear_table(&connection);
-        insert_good_cfg(&connection);
-        let loaded = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME);
+        let mut connection = database::establish_connection();
+        clear_table(&mut connection);
+        insert_good_cfg(&mut connection);
+        let loaded = ConfigFile::fetch_with_default(&mut connection, DEFAULT_CONFIG_FILENAME);
         assert!(loaded.is_ok());
     }
 
     #[test]
     #[serial]
     fn loads_default_with_empty_database() {
-        let connection = database::establish_connection();
-        clear_table(&connection);
-        let loaded = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME);
+        let mut connection = database::establish_connection();
+        clear_table(&mut connection);
+        let loaded = ConfigFile::fetch_with_default(&mut connection, DEFAULT_CONFIG_FILENAME);
         assert!(loaded.is_ok());
     }
 
@@ -319,28 +319,28 @@ pub mod tests {
     #[serial]
     #[should_panic]
     fn fails_with_wrong_default_config() {
-        let connection = database::establish_connection();
-        clear_table(&connection);
-        ConfigFile::fetch_with_default(&connection, "samples/fjafiowje.toml").ok();
+        let mut connection = database::establish_connection();
+        clear_table(&mut connection);
+        ConfigFile::fetch_with_default(&mut connection, "samples/fjafiowje.toml").ok();
     }
 
     #[test]
     #[serial]
     fn marks_broken_configs_correctly() {
-        let connection = database::establish_connection();
-        clear_table(&connection);
-        let db_good = insert_good_cfg(&connection);
-        let db_bad = insert_bad_cfg(&connection, false);
-        let good = ConfigFile::fetch_with_default(&connection, DEFAULT_CONFIG_FILENAME);
+        let mut connection = database::establish_connection();
+        clear_table(&mut connection);
+        let db_good = insert_good_cfg(&mut connection);
+        let db_bad = insert_bad_cfg(&mut connection, false);
+        let good = ConfigFile::fetch_with_default(&mut connection, DEFAULT_CONFIG_FILENAME);
         assert!(good.is_ok());
 
         let db_good: ConfigFileDB = day_configurations
             .find(db_good.id)
-            .first(&connection)
+            .first(&mut connection)
             .unwrap();
         let db_bad: ConfigFileDB = day_configurations
             .find(db_bad.id)
-            .first(&connection)
+            .first(&mut connection)
             .unwrap();
         assert!(db_good.known_broken == false);
         assert!(db_bad.known_broken == true);

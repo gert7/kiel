@@ -140,7 +140,7 @@ impl PriceCell {
     }
 
     /// Fetches all prices on the given date in its given timezone.
-    pub fn get_prices_from_db(connection: &PgConnection, date: &DateTime<Tz>) -> Result<DaySlice> {
+    pub fn get_prices_from_db(connection: &mut PgConnection, date: &DateTime<Tz>) -> Result<DaySlice> {
         use self::price_cells::dsl::*;
 
         let (midnight_start, midnight_end) = get_day_start_end(date)?;
@@ -152,7 +152,7 @@ impl PriceCell {
         Ok(DaySlice(cells))
     }
 
-    pub fn insert_cell_into_database(&self, connection: &PgConnection) -> eyre::Result<()> {
+    pub fn insert_cell_into_database(&self, connection: &mut PgConnection) -> eyre::Result<()> {
         use self::price_cells::dsl::*;
 
         let utc = self.moment.with_timezone(&Utc);
@@ -180,7 +180,7 @@ impl PriceCell {
     }
 
     pub fn insert_cells_into_database(
-        connection: &PgConnection,
+        connection: &mut PgConnection,
         prices: &Vec<PriceCell>,
     ) -> eyre::Result<()> {
         for price in prices {

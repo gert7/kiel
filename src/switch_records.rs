@@ -17,7 +17,7 @@ fn switch_to_int(state: &PowerState) -> i8 {
     }
 }
 
-pub fn record_switch(connection: &PgConnection, power_state: &PowerState) -> eyre::Result<i32> {
+pub fn record_switch(connection: &mut PgConnection, power_state: &PowerState) -> eyre::Result<i32> {
     use crate::schema::switch_records::dsl::*;
 
     let nid: i32 = diesel::insert_into(switch_records)

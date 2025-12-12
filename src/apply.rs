@@ -4,7 +4,7 @@ use diesel::PgConnection;
 
 use crate::{strategy::PowerState, switch_records::record_switch};
 
-pub fn apply_power_state(connection: &PgConnection, state: &PowerState) -> eyre::Result<()> {
+pub fn apply_power_state(connection: &mut PgConnection, state: &PowerState) -> eyre::Result<()> {
     let post_url = match state {
         PowerState::On => env::var("WEBHOOK_POST_ON")?,
         PowerState::Off => env::var("WEBHOOK_POST_OFF")?,

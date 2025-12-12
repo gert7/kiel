@@ -83,7 +83,7 @@ pub fn truncate_to_24_hours(day_prices: &DaySlice) -> DaySlice {
 }
 
 pub fn insert_matrix_to_database(
-    connection: &PgConnection,
+    connection: &mut PgConnection,
     date_matrix: &PriceMatrix,
 ) -> eyre::Result<()> {
     let date_matrix = date_matrix
